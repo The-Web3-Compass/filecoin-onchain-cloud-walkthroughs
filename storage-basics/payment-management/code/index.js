@@ -85,8 +85,28 @@ async function main() {
         TOKENS.USDFC
     );
 
-    console.log(`Rate Allowance: ${allowance.rateAllowance === ethers.MaxUint256 ? 'Unlimited' : ethers.formatUnits(allowance.rateAllowance, 18)}`);
-    console.log(`Lockup Allowance: ${allowance.lockupAllowance === ethers.MaxUint256 ? 'Unlimited' : ethers.formatUnits(allowance.lockupAllowance, 18)}`);
+    // Format rate allowance with null check
+    let rateAllowanceDisplay;
+    if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
+        rateAllowanceDisplay = 'Not set';
+    } else if (allowance.rateAllowance === ethers.MaxUint256) {
+        rateAllowanceDisplay = 'Unlimited';
+    } else {
+        rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
+    }
+
+    // Format lockup allowance with null check
+    let lockupAllowanceDisplay;
+    if (allowance.lockupAllowance === null || allowance.lockupAllowance === undefined) {
+        lockupAllowanceDisplay = 'Not set';
+    } else if (allowance.lockupAllowance === ethers.MaxUint256) {
+        lockupAllowanceDisplay = 'Unlimited';
+    } else {
+        lockupAllowanceDisplay = `${ethers.formatUnits(allowance.lockupAllowance, 18)} USDFC`;
+    }
+
+    console.log(`Rate Allowance: ${rateAllowanceDisplay}`);
+    console.log(`Lockup Allowance: ${lockupAllowanceDisplay}`);
 
     console.log("\n✅ Payment setup complete! Your account is ready for storage operations.");
 }

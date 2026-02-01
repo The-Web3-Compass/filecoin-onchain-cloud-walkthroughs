@@ -66,13 +66,11 @@ async function main() {
 
     console.log("✓ SDK initialized\n");
 
-    // Step 1: Check wallet balance
-    console.log("=== Step 1: Check Wallet Balance ===");
+    // Check wallet balance
     const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-    console.log(`Wallet Balance: ${ethers.formatUnits(walletBalance, 18)} USDFC\n`);
 
-    // Step 2: Define deposit parameters
-    console.log("=== Step 2: Configure Deposit Parameters ===");
+    // Step 1: Define deposit parameters
+    console.log("=== Step 1: Configure Deposit Parameters ===");
     
     const depositAmount = ethers.parseUnits("5.0", 18);
     console.log(`Deposit Amount: ${ethers.formatUnits(depositAmount, 18)} USDFC`);
@@ -90,8 +88,8 @@ async function main() {
     const lockupDays = Number(lockupPeriod / TIME_CONSTANTS.EPOCHS_PER_DAY);
     console.log(`Lockup Period: ${lockupPeriod} epochs (~${lockupDays} days)\n`);
 
-    // Step 3: Validate sufficient balance
-    console.log("=== Step 3: Validate Balance ===");
+    // Step 2: Validate sufficient balance
+    console.log("=== Step 2: Validate Balance ===");
     if (walletBalance < depositAmount) {
         throw new Error(
             `Insufficient balance. Required: ${ethers.formatUnits(depositAmount, 18)} USDFC, ` +
@@ -100,8 +98,8 @@ async function main() {
     }
     console.log("✓ Sufficient USDFC balance confirmed\n");
 
-    // Step 4: Execute deposit and approval
-    console.log("=== Step 4: Deposit and Approve Operator ===");
+    // Step 3: Execute deposit and approval
+    console.log("=== Step 3: Deposit and Approve Operator ===");
     console.log("Submitting transaction...");
     
     const tx = await synapse.payments.depositWithPermitAndApproveOperator(
@@ -118,8 +116,8 @@ async function main() {
     const receipt = await tx.wait();
     console.log(`✓ Transaction confirmed in block ${receipt.blockNumber}\n`);
 
-    // Step 5: Verify payment account balance
-    console.log("=== Step 5: Verify Payment Account Balance ===");
+    // Step 4: Verify payment account balance
+    console.log("=== Step 4: Verify Payment Account Balance ===");
     
     const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
     console.log(`Payment Account Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
@@ -127,16 +125,36 @@ async function main() {
     const updatedWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
     console.log(`Wallet Balance: ${ethers.formatUnits(updatedWalletBalance, 18)} USDFC\n`);
 
-    // Step 6: Check operator allowances
-    console.log("=== Step 6: Check Operator Allowances ===");
+    // Step 5: Check operator allowances
+    console.log("=== Step 5: Check Operator Allowances ===");
     
     const allowance = await synapse.payments.allowance(
         operatorAddress,
         TOKENS.USDFC
     );
     
-    console.log(`Rate Allowance: ${allowance.rateAllowance === ethers.MaxUint256 ? 'Unlimited' : ethers.formatUnits(allowance.rateAllowance, 18)}`);
-    console.log(`Lockup Allowance: ${allowance.lockupAllowance === ethers.MaxUint256 ? 'Unlimited' : ethers.formatUnits(allowance.lockupAllowance, 18)}`);
+    // Format rate allowance with null check
+    let rateAllowanceDisplay;
+    if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
+        rateAllowanceDisplay = 'Not set';
+    } else if (allowance.rateAllowance === ethers.MaxUint256) {
+        rateAllowanceDisplay = 'Unlimited';
+    } else {
+        rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
+    }
+    
+    // Format lockup allowance with null check
+    let lockupAllowanceDisplay;
+    if (allowance.lockupAllowance === null || allowance.lockupAllowance === undefined) {
+        lockupAllowanceDisplay = 'Not set';
+    } else if (allowance.lockupAllowance === ethers.MaxUint256) {
+        lockupAllowanceDisplay = 'Unlimited';
+    } else {
+        lockupAllowanceDisplay = `${ethers.formatUnits(allowance.lockupAllowance, 18)} USDFC`;
+    }
+    
+    console.log(`Rate Allowance: ${rateAllowanceDisplay}`);
+    console.log(`Lockup Allowance: ${lockupAllowanceDisplay}`);
     
     console.log("\n✅ Payment setup complete! Your account is ready for storage operations.");
 }
@@ -148,7 +166,7 @@ main().catch((err) => {
 });
 ```
 
-This script demonstrates six key operations that give you complete visibility into payment account management. Each console log group corresponds to a distinct operation worth understanding individually.
+This script demonstrates five key operations that give you complete visibility into payment account management. Each console log group corresponds to a distinct operation worth understanding individually.
 
 ## Understanding the Code
 
@@ -269,9 +287,29 @@ const allowance = await synapse.payments.allowance(
     operatorAddress,
     TOKENS.USDFC
 );
+
+// Format rate allowance with null check
+let rateAllowanceDisplay;
+if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
+    rateAllowanceDisplay = 'Not set';
+} else if (allowance.rateAllowance === ethers.MaxUint256) {
+    rateAllowanceDisplay = 'Unlimited';
+} else {
+    rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
+}
 ```
 
 This retrieves the current allowance you have granted to the operator. The returned object contains `rateAllowance` and `lockupAllowance` fields that reflect the limits you set.
+
+The null checks before formatting are critical for defensive programming. In some edge cases, particularly immediately after setting allowances or during network synchronization delays, the SDK might return `null` or `undefined` for allowance values. Attempting to format these directly with `ethers.formatUnits()` would throw a `BigNumberish` error.
+
+The conditional logic handles three scenarios:
+
+1. **Null or Undefined**: The allowance has not been set or is not yet synchronized. This should not normally occur after a successful approval transaction, but checking prevents runtime errors.
+
+2. **MaxUint256**: The allowance was set to unlimited, which is the most common case. We display this as "Unlimited" for readability rather than showing the enormous 78-digit number.
+
+3. **Specific Value**: The allowance was set to a specific amount, which we format as human-readable USDFC.
 
 Checking allowances confirms that the approval succeeded and the operator has the permissions needed to charge your account. This is particularly important if you ever need to revoke or modify allowances later. The allowance system provides transparency into exactly which operators can charge your account and what their limits are.
 
@@ -290,30 +328,27 @@ Managing Filecoin Payment Accounts...
 
 ✓ SDK initialized
 
-=== Step 1: Check Wallet Balance ===
-Wallet Balance: 18.5 USDFC
-
-=== Step 2: Configure Deposit Parameters ===
+=== Step 1: Configure Deposit Parameters ===
 Deposit Amount: 5.0 USDFC
 Operator Address: 0x1234567890abcdef1234567890abcdef12345678
 Rate Allowance: Unlimited (115792089237316195423570985008687907853269984665640564039457584007913129639935)
 Lockup Allowance: Unlimited (115792089237316195423570985008687907853269984665640564039457584007913129639935)
 Lockup Period: 86400 epochs (~30 days)
 
-=== Step 3: Validate Balance ===
+=== Step 2: Validate Balance ===
 ✓ Sufficient USDFC balance confirmed
 
-=== Step 4: Deposit and Approve Operator ===
+=== Step 3: Deposit and Approve Operator ===
 Submitting transaction...
 Transaction Hash: 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
 Waiting for confirmation...
 ✓ Transaction confirmed in block 123456
 
-=== Step 5: Verify Payment Account Balance ===
+=== Step 4: Verify Payment Account Balance ===
 Payment Account Balance: 5.0 USDFC
 Wallet Balance: 13.499 USDFC
 
-=== Step 6: Check Operator Allowances ===
+=== Step 5: Check Operator Allowances ===
 Rate Allowance: Unlimited
 Lockup Allowance: Unlimited
 
@@ -395,6 +430,22 @@ Wait approximately 60 seconds for the transaction to be mined. Filecoin block ti
 **Allowance shows as 0 after approval**
 
 This typically means the transaction failed. Verify the transaction hash shows success on the block explorer. If the transaction succeeded but allowances show 0, ensure you are checking the allowance for the correct operator address.
+
+**"invalid BigNumberish value" error when checking allowances**
+
+This error occurs when trying to format `null` or `undefined` allowance values with `ethers.formatUnits()`. The code in this walkthrough includes null checks to prevent this, but if you encounter it in your own code, ensure you check for null/undefined before formatting:
+
+```javascript
+if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
+    console.log('Rate Allowance: Not set');
+} else if (allowance.rateAllowance === ethers.MaxUint256) {
+    console.log('Rate Allowance: Unlimited');
+} else {
+    console.log(`Rate Allowance: ${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`);
+}
+```
+
+This defensive approach handles edge cases where the blockchain state may not be fully synchronized immediately after transactions.
 
 **Cannot withdraw from payment account**
 
