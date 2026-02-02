@@ -1,0 +1,27 @@
+{
+    "name": "filecoin-advanced-payment-management",
+    "version": "1.0.0",
+    "description": "Advanced payment operations for Filecoin Onchain Cloud",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "balances": "node 1-check-balances.js",
+        "health": "node 2-account-health.js",
+        "approvals": "node 3-operator-approvals.js",
+        "rails": "node 4-payment-rails.js",
+        "withdraw": "node 5-withdraw-funds.js"
+    },
+    "keywords": [
+        "filecoin",
+        "payments",
+        "web3",
+        "storage"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.36.1",
+        "dotenv": "^17.2.3",
+        "ethers": "^6.14.3"
+    }
+}
