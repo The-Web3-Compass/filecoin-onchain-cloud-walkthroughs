@@ -71,19 +71,19 @@ async function main() {
 
     // Step 1: Define deposit parameters
     console.log("=== Step 1: Configure Deposit Parameters ===");
-    
+
     const depositAmount = ethers.parseUnits("5.0", 18);
     console.log(`Deposit Amount: ${ethers.formatUnits(depositAmount, 18)} USDFC`);
-    
+
     const operatorAddress = synapse.getWarmStorageAddress();
     console.log(`Operator Address: ${operatorAddress}`);
-    
+
     const rateAllowance = ethers.MaxUint256;
     console.log(`Rate Allowance: Unlimited (${rateAllowance})`);
-    
+
     const lockupAllowance = ethers.MaxUint256;
     console.log(`Lockup Allowance: Unlimited (${lockupAllowance})`);
-    
+
     const lockupPeriod = TIME_CONSTANTS.EPOCHS_PER_MONTH;
     const lockupDays = Number(lockupPeriod / TIME_CONSTANTS.EPOCHS_PER_DAY);
     console.log(`Lockup Period: ${lockupPeriod} epochs (~${lockupDays} days)\n`);
@@ -101,7 +101,7 @@ async function main() {
     // Step 3: Execute deposit and approval
     console.log("=== Step 3: Deposit and Approve Operator ===");
     console.log("Submitting transaction...");
-    
+
     const tx = await synapse.payments.depositWithPermitAndApproveOperator(
         depositAmount,
         operatorAddress,
@@ -112,27 +112,27 @@ async function main() {
 
     console.log(`Transaction Hash: ${tx.hash}`);
     console.log("Waiting for confirmation...");
-    
+
     const receipt = await tx.wait();
     console.log(`✓ Transaction confirmed in block ${receipt.blockNumber}\n`);
 
     // Step 4: Verify payment account balance
     console.log("=== Step 4: Verify Payment Account Balance ===");
-    
+
     const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
     console.log(`Payment Account Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
-    
+
     const updatedWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
     console.log(`Wallet Balance: ${ethers.formatUnits(updatedWalletBalance, 18)} USDFC\n`);
 
     // Step 5: Check operator allowances
     console.log("=== Step 5: Check Operator Allowances ===");
-    
+
     const allowance = await synapse.payments.allowance(
         operatorAddress,
         TOKENS.USDFC
     );
-    
+
     // Format rate allowance with null check
     let rateAllowanceDisplay;
     if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
@@ -142,7 +142,7 @@ async function main() {
     } else {
         rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
     }
-    
+
     // Format lockup allowance with null check
     let lockupAllowanceDisplay;
     if (allowance.lockupAllowance === null || allowance.lockupAllowance === undefined) {
@@ -152,10 +152,10 @@ async function main() {
     } else {
         lockupAllowanceDisplay = `${ethers.formatUnits(allowance.lockupAllowance, 18)} USDFC`;
     }
-    
+
     console.log(`Rate Allowance: ${rateAllowanceDisplay}`);
     console.log(`Lockup Allowance: ${lockupAllowanceDisplay}`);
-    
+
     console.log("\n✅ Payment setup complete! Your account is ready for storage operations.");
 }
 
@@ -445,7 +445,18 @@ if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
 }
 ```
 
+
 This defensive approach handles edge cases where the blockchain state may not be fully synchronized immediately after transactions.
+
+**Allowance shows "Not set"**
+
+This indicates that the RPC node has not yet fully indexed the transaction. Even though the transaction is confirmed, the read-only state query might return incomplete data for a few seconds. This is known as "eventual consistency." 
+
+If you see this, simply wait 10-20 seconds and run a separate script to check allowances again, or add a short delay in your script before checking:
+
+```javascript
+await new Promise(r => setTimeout(r, 5000));
+```
 
 **Cannot withdraw from payment account**
 

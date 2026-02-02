@@ -38,6 +38,18 @@ async function main() {
 
     console.log("✓ Payment account is funded\n");
 
+    // Add explicit allowance check
+    const operatorAddress = synapse.getWarmStorageAddress();
+    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+
+    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
+        console.log("⚠️  Warning: Operator allowances are not set!");
+        console.log("The storage provider cannot charge your account without approval.");
+        console.log("Please run the payment-management tutorial (or fix-allowance.js) first.");
+        process.exit(1);
+    }
+    console.log("✓ Operator allowances verified\n");
+
     // Step 2: Read the sample file
     console.log("=== Step 2: Load Upload Data ===");
 

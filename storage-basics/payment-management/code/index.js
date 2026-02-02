@@ -80,6 +80,9 @@ async function main() {
     // Step 5: Check operator allowances
     console.log("=== Step 5: Check Operator Allowances ===");
 
+    console.log("Waiting 5 seconds for network consistency...");
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
     const allowance = await synapse.payments.allowance(
         operatorAddress,
         TOKENS.USDFC

@@ -118,6 +118,18 @@ async function main() {
     
     console.log("✓ Payment account is funded\n");
 
+    // Add explicit allowance check
+    const operatorAddress = synapse.getWarmStorageAddress();
+    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+
+    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
+        console.log("⚠️  Warning: Operator allowances are not set!");
+        console.log("The storage provider cannot charge your account without approval.");
+        console.log("Please run the payment-management tutorial (or fix-allowance.js) first.");
+        process.exit(1);
+    }
+    console.log("✓ Operator allowances verified\n");
+
     // Step 2: Read the sample file
     console.log("=== Step 2: Load Upload Data ===");
     
@@ -210,6 +222,22 @@ if (paymentBalance === 0n) {
 Before attempting an upload, we verify the payment account holds funds. The `balance()` method returns a BigInt representing your payment account balance in the smallest USDFC units (wei-equivalent).
 
 Checking balance proactively prevents confusing errors later. If you attempt an upload with an unfunded account, the storage provider would reject the operation, but the error message might not clearly indicate the payment account issue. Explicit verification provides clarity.
+
+### Allowance Verification
+
+```javascript
+const operatorAddress = synapse.getWarmStorageAddress();
+const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+
+if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
+    console.log("⚠️  Warning: Operator allowances are not set!");
+    process.exit(1);
+}
+```
+
+We also verify that the storage operator has permission to charge your account. The `serviceApproval()` method checks both rate and lockup allowances.
+
+This is a defensive check. If you skipped the previous walkthrough or if your allowances were not successfully set (e.g., due to the "eventual consistency" issue discussed previously), the upload would fail at the payment step. Catching this early allows us to provide a helpful error message directing you to fix the permission issue.
 
 ### File Loading
 
