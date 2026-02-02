@@ -1,0 +1,21 @@
+📄 Filecoin Onchain Cloud - Project Documentation
+
+This document contains important project information for the Filecoin storage system.
+
+## Overview
+This is a sample document demonstrating multi-file dataset storage on Filecoin's decentralized network. When you store multiple related files together, you can manage them as a cohesive dataset rather than individual pieces.
+
+## Key Benefits
+- Unified metadata tagging across related files
+- Simplified payment management through dataset-level payment rails
+- Easier organization and retrieval of related content
+- Proof verification at the dataset level
+
+## Use Cases
+Datasets are ideal for:
+- Document collections (contracts, reports, archives)
+- Photo albums and media libraries
+- Code repositories and project files
+- Backup sets and disaster recovery data
+
+This file is part of a demonstration dataset showing how Filecoin handles collections of files efficiently.

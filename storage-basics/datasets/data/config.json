@@ -1,0 +1,22 @@
+{
+  "application": "Filecoin Dataset Demo",
+  "version": "1.0.0",
+  "network": "calibration",
+  "settings": {
+    "storageProvider": "warm-storage",
+    "replicationFactor": 1,
+    "autoRenew": true,
+    "lockupPeriod": "30days"
+  },
+  "metadata": {
+    "category": "configuration",
+    "environment": "testnet",
+    "created": "2026-02-02",
+    "purpose": "Demonstrate JSON file storage in datasets"
+  },
+  "features": {
+    "datasetManagement": true,
+    "proofVerification": true,
+    "metadataTagging": true
+  }
+}

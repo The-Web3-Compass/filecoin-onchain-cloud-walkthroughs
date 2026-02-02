@@ -1,0 +1,5 @@
+file_name,file_type,size_bytes,upload_date,category
+document1.txt,text/plain,892,2026-02-02,documentation
+config.json,application/json,456,2026-02-02,configuration
+notes.md,text/markdown,734,2026-02-02,documentation
+data.csv,text/csv,250,2026-02-02,data
