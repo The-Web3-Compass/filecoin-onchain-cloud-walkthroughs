@@ -4,9 +4,14 @@ In the previous payment management walkthrough, you learned how to deposit USDFC
 
 Production applications require ongoing payment management. You need to know when balances are running low, understand which operators have access to your funds, track active payment channels, and maintain visibility into your financial position. This walkthrough teaches you how to implement comprehensive payment monitoring and management for production deployments.
 
+
+
 ## Module Structure
 
 This module provides **five separate scripts**, each focusing on a specific payment operation. This structure allows you to learn each concept in isolation and run operations independently:
+
+> [!NOTE]
+> All reference scripts are available in the official repository: [Runable Scripts](https://github.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/tree/main/storage-basics/advanced-payment-management/code)
 
 ```
 code/
