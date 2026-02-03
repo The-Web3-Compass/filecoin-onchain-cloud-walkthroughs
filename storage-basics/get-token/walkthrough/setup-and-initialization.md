@@ -4,6 +4,8 @@ Developers building applications that need storage have long faced an uncomforta
 
 Filecoin Onchain Cloud offers a third option. It brings blockchain storage closer to how modern cloud infrastructure actually works. You get cryptographic proof that your data exists, not just promises. You get economics that keep providers accountable. And you get an SDK that abstracts away the blockchain complexity. The platform selects your storage providers, continuously verifies your data, and handles payments automatically. You write standard API calls and let the network manage the rest.
 
+![filecoin onchain cloud vs traditional cloud](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/get-token/images/1.png)
+
 One aspect worth highlighting early is the pricing model. Traditional cloud providers can adjust prices at will. Other blockchain storage platforms tie costs directly to volatile tokens, which creates real business problems when you need to explain why infrastructure costs tripled overnight due to market movements. Filecoin addresses this with a dual token system that keeps storage pricing stable even when crypto markets fluctuate. This makes it possible to budget infrastructure spending with actual predictability.
 
 This walkthrough will take you from a fresh environment to a funded storage account ready for real work. We'll use the Calibration testnet throughout, so everything is free while you learn. By the end, you'll have configured your environment, funded a payment account, and understood why this architecture solves problems that other approaches struggle with.
