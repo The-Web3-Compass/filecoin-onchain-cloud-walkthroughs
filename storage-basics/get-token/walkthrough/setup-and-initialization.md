@@ -73,6 +73,8 @@ Second, storage costs remain independent of network congestion. When transaction
 
 Third, you can optimize gas and storage separately. These are fundamentally different problems that benefit from different strategies. Gas costs respond well to transaction batching and timing optimization. Storage costs respond well to capacity planning and longer term commitments. Treating them as separate concerns lets you optimize each appropriately.
 
+![token comparison table](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/get-token/images/2.png)
+
 ### Getting tFIL for Gas
 
 1. Visit the [Calibration tFIL Faucet](https://faucet.calibnet.chainsafe-fil.io/funds.html)
