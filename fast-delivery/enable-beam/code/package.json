@@ -5,6 +5,7 @@
     "type": "module",
     "main": "index.js",
     "scripts": {
+        "fund": "node fund-account.js",
         "start": "node index.js"
     },
     "keywords": [

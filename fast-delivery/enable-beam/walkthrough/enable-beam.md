@@ -89,42 +89,183 @@ The faucet provides enough USDFC for extensive experimentation. At current testn
 
 Verify both tokens appear in MetaMask. If the USDFC balance does not display automatically, you may need to import the token contract address. The faucet page provides this address if needed.
 
-### Payment Account Funding
+## Step 1: Project Setup
 
-Filecoin separates wallet balances from payment accounts to improve security and enable automated payments. Your wallet holds tokens, but storage operations charge against a dedicated payment account. This architecture prevents compromised applications from draining your entire wallet - they can only access funds you explicitly deposit to the payment account.
+Before we start with the code, let's set up our project structure. This ensures we have a secure place to store credentials and run scripts.
 
-Setting up the payment account requires three operations:
+**Create Project Directory**:
 
-1. **Deposit USDFC** from your wallet to the payment account
-2. **Approve the storage operator** to charge your payment account
-3. **Set lockup parameters** that control how funds are released
+```bash
+mkdir enable-beam-cdn
+cd enable-beam-cdn
+```
 
-The Synapse SDK provides a single method that performs all three atomically:
+This isolation prevents dependency conflicts and keeps the tutorial self-contained.
+
+**Initialize npm Project**:
+
+```bash
+npm init -y
+```
+
+This generates a default `package.json`. Open it in your text editor and modify it to enable ES modules (crucial for the SDK) and add our `fund` script:
+
+```json
+{
+  "name": "enable-beam-cdn",
+  "version": "1.0.0",
+  "description": "Enable Beam CDN for fast content delivery on Filecoin",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "fund": "node fund-account.js",
+    "start": "node index.js"
+  },
+  "keywords": ["filecoin", "beam", "cdn", "storage"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@filoz/synapse-sdk": "^0.36.1",
+    "dotenv": "^16.0.3",
+    "ethers": "^6.14.3"
+  }
+}
+```
+
+The critical change is `"type": "module"`, which enables ES module syntax (`import` instead of `require`).
+
+**Install Dependencies**:
+
+```bash
+npm install
+```
+
+This installs:
+- **@filoz/synapse-sdk**: For interacting with Filecoin
+- **ethers**: For token math and utility functions
+- **dotenv**: For loading environment variables securely
+
+## Step 2: Security and Funding
+
+Now that our project is set up, we can securely configure our credentials and fund the payment account.
+
+**Export Your Private Key**:
+
+To interact programmatically, you need to export your private key from MetaMask and store it securely.
+
+1. Open MetaMask and click the three dots menu (⋮)
+2. Select "Account details" -> "Show private key"
+3. Enter password and copy the key (starts with `0x`)
+
+**Create .env File**:
+
+In your project directory (`enable-beam-cdn/`), create a `.env` file:
+
+```bash
+touch .env
+```
+
+Open `.env` and add your key:
+
+```
+PRIVATE_KEY=0x1234567890abcdef...your_actual_private_key_here
+```
+
+**Security Critical**: Never commit `.env` to version control. Create a `.gitignore`:
+
+```bash
+echo ".env" >> .gitignore
+echo "node_modules/" >> .gitignore
+```
+
+For teams, creating a `.env.example` (with dummy values) is good practice.
+
+**Fund Payment Account**:
+
+Filecoin separates wallet balances (gas) from payment accounts (storage). We need to deposit USDFC into the payment account.
+
+Create `fund-account.js`:
 
 ```javascript
 import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
 import { ethers } from 'ethers';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const synapse = await Synapse.create({
-    privateKey: process.env.PRIVATE_KEY,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
-});
+async function fundPaymentAccount() {
+    console.log('======================================================================');
+    console.log('  Funding Payment Account');
+    console.log('======================================================================\n');
 
-const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-    ethers.parseUnits("2.5", 18),           // Deposit 2.5 USDFC
-    synapse.getWarmStorageAddress(),         // Storage operator address
-    ethers.MaxUint256,                       // Unlimited rate allowance
-    ethers.MaxUint256,                       // Unlimited lockup allowance
-    TIME_CONSTANTS.EPOCHS_PER_MONTH          // 30-day lockup period
-);
+    // Initialize SDK
+    const synapse = await Synapse.create({
+        privateKey: process.env.PRIVATE_KEY,
+        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    });
 
-await tx.wait();
-console.log("Payment account funded and operator approved");
+    console.log('Wallet address:', synapse.address);
+    
+    // Check current balances
+    const walletBalance = await synapse.wallet.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    
+    console.log(`\nCurrent wallet balance: ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+    console.log(`Current payment account balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC\n`);
+    
+    if (walletBalance === 0n) {
+        console.log('⚠️  Your wallet has no USDFC. Please visit the faucet first:');
+        console.log('   https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc\n');
+        process.exit(1);
+    }
+    
+    // Deposit and approve operator
+    console.log('Depositing 2.5 USDFC to payment account and approving operator...');
+    
+    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
+        ethers.parseUnits("2.5", 18),           // Deposit 2.5 USDFC
+        synapse.getWarmStorageAddress(),         // Storage operator address
+        ethers.MaxUint256,                       // Unlimited rate allowance
+        ethers.MaxUint256,                       // Unlimited lockup allowance
+        TIME_CONSTANTS.EPOCHS_PER_MONTH          // 30-day lockup period
+    );
+
+    console.log('Transaction submitted. Waiting for confirmation...');
+    await tx.wait();
+    
+    // Verify new balance
+    const newPaymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    console.log(`\n✅ Payment account funded successfully!`);
+    console.log(`New payment account balance: ${ethers.formatUnits(newPaymentBalance, 18)} USDFC\n`);
+}
+
+fundPaymentAccount().catch(console.error);
 ```
 
-This code deposits 2.5 USDFC to your payment account and authorizes the storage operator to charge for uploads and retrievals. The lockup period ensures funds remain available for ongoing storage deals. We will execute this code in the implementation section.
+(The full `fund-account.js` code is provided in the previous section or file).
 
-**Security Note**: For development, using unlimited allowances simplifies testing. Production deployments should set explicit limits based on expected usage patterns. The storage operator is a trusted, audited smart contract that can only charge for actual storage operations - it cannot arbitrarily drain your account.
+Run the funding script:
+
+```bash
+npm run fund
+```
+
+This deposits 2.5 USDFC and sets necessary allowances. You only need to do this once.
+
+## Step 3: Create Test Data
+
+Create a directory for test data:
+
+```bash
+mkdir data
+```
+
+Create a sample file `data/sample.txt` with some content (at least 127 bytes). You can use the text from the previous section or any dummy text.
+
+---
+
+## Understanding Beam CDN Architecture
+
+Beam CDN operates as a layer above Filecoin's storage network...
 
 ### Understanding PieceCID
 
@@ -246,148 +387,17 @@ The caching behavior means Beam CDN provides greatest benefit for content access
 
 ---
 
-## Step 1: Project Setup
 
-Now that you understand what Beam CDN provides and how it works, let's build a comparison script that demonstrates these concepts through measurement.
 
-### Create Project Directory
 
-Create a dedicated directory for this tutorial:
 
-```bash
-mkdir enable-beam-cdn
-cd enable-beam-cdn
-```
+## Step 4: Comparison Implementation
 
-This isolation prevents dependency conflicts with other projects and keeps the tutorial self-contained.
+Now that we have our project setup, tested, and funded, we can implement the core logic: a script that uploads data with and without Beam CDN to measure the performance difference.
 
-### Initialize npm Project
+### Create the Comparison Script
 
-Initialize a new Node.js project:
-
-```bash
-npm init -y
-```
-
-This generates a default `package.json`. We need to modify it to enable ES modules and add our dependencies. Open `package.json` and update it to match:
-
-```json
-{
-  "name": "enable-beam-cdn",
-  "version": "1.0.0",
-  "description": "Enable Beam CDN for fast content delivery on Filecoin",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "keywords": ["filecoin", "beam", "cdn", "storage"],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@filoz/synapse-sdk": "^0.36.1",
-    "dotenv": "^16.0.3",
-    "ethers": "^6.14.3"
-  }
-}
-```
-
-The critical change is `"type": "module"`, which enables ES module syntax (`import` instead of `require`). The Synapse SDK uses modern JavaScript features that work best with ES modules.
-
-### Install Dependencies
-
-Install the required packages:
-
-```bash
-npm install
-```
-
-This installs three dependencies:
-
-**@filoz/synapse-sdk**: The Filecoin Onchain Cloud SDK. This provides the `Synapse` class for SDK initialization, the `storage` interface for uploads and downloads, and the `payments` interface for account management.
-
-**ethers**: A complete Ethereum library. We use it for handling token amounts (`parseUnits`, `formatUnits`), working with large numbers (`MaxUint256`), and waiting for transaction confirmations (`tx.wait()`).
-
-**dotenv**: Loads environment variables from a `.env` file. This keeps sensitive data like private keys out of source code, improving security and enabling different configurations for development and production.
-
-### Configure Environment Variables
-
-Create a `.env` file to store your private key:
-
-```bash
-touch .env
-```
-
-Open `.env` in your text editor and add:
-
-```
-PRIVATE_KEY=your_private_key_from_metamask
-```
-
-Replace `your_private_key_from_metamask` with the actual private key you exported from MetaMask earlier.
-
-**Security Critical**: Never commit `.env` to version control. Create a `.gitignore` file if one doesn't exist:
-
-```bash
-echo ".env" >> .gitignore
-echo "node_modules/" >> .gitignore
-```
-
-This prevents accidentally exposing your private key in Git repositories.
-
-For team projects, create a `.env.example` template:
-
-```bash
-echo "PRIVATE_KEY=your_private_key_here" > .env.example
-```
-
-Team members copy `.env.example` to `.env` and fill in their own credentials. The example file can safely be committed since it contains no actual secrets.
-
-### Create Data Directory and Sample File
-
-Create a directory for test data:
-
-```bash
-mkdir data
-```
-
-Create a sample file `data/sample.txt` with some content. The file should be at least 127 bytes (Filecoin's minimum) but under 200 MiB (current SDK maximum). Here's sample content you can use:
-
-```
-Filecoin Beam CDN: Accelerating Decentralized Content Delivery
-
-This sample file demonstrates Beam CDN's performance characteristics on Filecoin.
-Beam is an incentivized data delivery layer that provides CDN-level retrieval
-performance for content stored on the decentralized network.
-
-Traditional CDNs rely on centralized infrastructure, creating single points of
-failure and vendor lock-in. Filecoin Beam transforms this model by creating a
-decentralized network of retrieval providers who compete to deliver your content
-quickly and reliably.
-
-When you enable Beam CDN with withCDN: true, your uploads are optimized for fast
-retrieval through a global network of providers. These providers are incentivized
-through a paid-per-byte model, ensuring they maintain high performance and
-availability.
-
-Key Benefits:
-- Global edge distribution for low-latency access
-- Provider competition drives performance improvements
-- Cryptographic verification ensures data integrity
-- No vendor lock-in - switch providers seamlessly
-- Pay only for what you use
-
-This tutorial will show you how to enable Beam CDN, compare performance against
-standard retrieval, and understand the cost implications for production deployments.
-```
-
-This content is approximately 1.2 KB - large enough to demonstrate performance differences but small enough for quick testing.
-
----
-
-## Step 2: Create the Comparison Script
-
-Now let's build the complete comparison script. Create `index.js`:
+Create `index.js`:
 
 ```javascript
 import 'dotenv/config';
@@ -620,7 +630,7 @@ This matches the quality standards from the storage-basics tutorials.
 
 ---
 
-## Step 3: Run the Comparison
+## Step 5: Run the Comparison
 
 Now let's execute the script and analyze the results!
 
