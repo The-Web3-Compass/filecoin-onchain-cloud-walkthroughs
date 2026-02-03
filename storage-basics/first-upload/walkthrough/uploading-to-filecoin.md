@@ -6,6 +6,8 @@ This walkthrough takes you through your first upload to Filecoin. You will learn
 
 Traditional cloud storage abstracts away details about where your data lives and how it's maintained. That opacity might feel convenient, but it creates dependencies on specific providers and prevents independent verification. Filecoin takes the opposite approach. Every aspect of storage is cryptographically provable and publicly auditable. You can verify exactly where your data lives, confirm it remains intact, and retrieve it from any willing provider. This transparency comes with complexity, but the tradeoff enables genuinely decentralized infrastructure.
 
+![traditional vs decentralized storage](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/first-upload/images/1.png)
+
 ## Prerequisites
 
 Before proceeding, you must have completed both previous walkthroughs:
@@ -53,6 +55,8 @@ This identifier is derived entirely from your data's content, not from metadata 
 
 The format looks like this: `bafkzcibca...` (64-65 characters total). The prefix `bafkzcib` identifies this as a PieceCID v2 format. Earlier Filecoin implementations used a v1 format starting with `baga6ea4seaq`, and you may encounter that in older tools. The Synapse SDK exclusively uses v2.
 
+![pieceID](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/first-upload/images/2.png)
+
 PieceCID serves multiple critical functions:
 
 **Unique Identification**: No two different files produce the same PieceCID (with cryptographic certainty). This lets you reference data unambiguously.
@@ -69,7 +73,7 @@ Understanding PieceCID clarifies what the upload operation actually returns and 
 
 This tutorial includes a sample file (`sample.txt`) located in the `data/` folder. You can find it in the repository at:
 
-[https://github.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/tree/main/storage-basics/first-upload/data/sample.txt](https://github.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/tree/main/storage-basics/first-upload/data/sample.txt)
+[Sample File](https://github.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/tree/main/storage-basics/first-upload/data/sample.txt)
 
 The sample file is 459 bytes of text about Filecoin storage, which meets the minimum size requirement of 127 bytes. Feel free to replace it with your own small files to experiment - just ensure they're between 127 bytes and 200 MiB.
 
@@ -372,6 +376,8 @@ The upload succeeded, and you now have data permanently stored on Filecoin Calib
 ## What Happens During Upload
 
 When you call `synapse.storage.upload()`, a complex orchestration occurs across multiple systems. Understanding this flow clarifies what distinguishes Filecoin from traditional storage.
+
+![what happens during upload](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/first-upload/images/3.png)
 
 ### Phase 1: Local Processing
 
