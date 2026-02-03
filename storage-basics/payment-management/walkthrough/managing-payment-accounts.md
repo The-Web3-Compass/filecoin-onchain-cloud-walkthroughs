@@ -31,6 +31,8 @@ Each section explains not only what to do, but why the architecture requires it 
 
 ## Payment Accounts: A Deeper Look
 
+![payment accounts](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/payment-management/images/1.png)
+
 When you deposited USDFC in the previous walkthrough, you moved tokens from your wallet into a distinct payment account. This might have seemed like unnecessary complexity. After all, why not just pay storage operators directly from your wallet?
 
 The answer involves a fundamental tension in decentralized storage. Operators need the ability to charge you automatically over time as they continue storing your data. Filecoin produces blocks every 30 seconds, which means storage charges potentially occur thousands of times per month. Requiring manual approval for each charge would render the system completely unusable.
