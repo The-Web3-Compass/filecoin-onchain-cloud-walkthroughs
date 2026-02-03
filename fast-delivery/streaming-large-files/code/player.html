@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filecoin Video Streaming Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-container {
+            width: 100%;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .info-box {
+            background: #f5f7fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #667eea;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Filecoin Video Streaming</h1>
+            <p class="subtitle">Stream videos from decentralized storage with Beam CDN</p>
+        </header>
+
+        <!-- Video Player Section -->
+        <div class="card">
+            <h2 class="section-title">📺 Video Player</h2>
+
+            <div class="input-group">
+                <label for="pieceCidInput">PieceCID:</label>
+                <input type="text" id="pieceCidInput" placeholder="Enter PieceCID to load video (e.g., bafkzcibca...)">
+            </div>
+
+            <button onclick="loadVideo()" id="loadBtn">Load Video</button>
+
+            <div id="videoSection" class="hidden">
+                <div class="video-container">
+                    <video id="videoPlayer" controls></video>
+                </div>
+
+                <div class="info-box" id="videoInfo"></div>
+            </div>
+
+            <div id="playerStatus"></div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card">
+            <h2 class="section-title">📤 Upload Video</h2>
+
+            <div class="input-group">
+                <label for="fileInput">Select Video File:</label>
+                <input type="file" id="fileInput" accept="video/*">
+            </div>
+
+            <button onclick="uploadVideo()" id="uploadBtn">Upload to Filecoin</button>
+
+            <div id="uploadProgress" class="hidden">
+                <p>Uploading...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- Features -->
+        <div class="card">
+            <h2 class="section-title">✨ Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <div class="feature-title">Beam CDN</div>
+                    <div class="feature-desc">Fast delivery through global edge network</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Range Requests</div>
+                    <div class="feature-desc">Seek anywhere in the video instantly</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">Decentralized</div>
+                    <div class="feature-desc">Stored on Filecoin's distributed network</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✅</div>
+                    <div class="feature-title">Verified</div>
+                    <div class="feature-desc">Cryptographic proof of data integrity</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = window.location.origin;
+
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            statusEl.classList.remove('hidden');
+        }
+
+        function hideStatus(elementId) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.classList.add('hidden');
+        }
+
+        async function loadVideo() {
+            const pieceCid = document.getElementById('pieceCidInput').value.trim();
+
+            if (!pieceCid) {
+                showStatus('playerStatus', 'Please enter a PieceCID', 'error');
+                return;
+            }
+
+            showStatus('playerStatus', 'Loading video from Filecoin Beam CDN...', 'loading');
+
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoSection = document.getElementById('videoSection');
+            const videoInfo = document.getElementById('videoInfo');
+
+            try {
+                // Set video source
+                const videoUrl = `${SERVER_URL}/video/${pieceCid}`;
+                videoPlayer.src = videoUrl;
+
+                // Fetch metadata
+                const metaResponse = await fetch(`${SERVER_URL}/metadata/${pieceCid}`);
+                const metadata = await metaResponse.json();
+
+                // Show video section
+                videoSection.classList.remove('hidden');
+
+                // Display info
+                videoInfo.innerHTML = `
+                    <p><strong>PieceCID:</strong> ${pieceCid}</p>
+                    <p><strong>Size:</strong> ${metadata.sizeFormatted}</p>
+                    <p><strong>Status:</strong> Ready to play</p>
+                `;
+
+                showStatus('playerStatus', '✓ Video loaded successfully! You can now play and seek through the video.', 'success');
+
+                // Auto-play
+                videoPlayer.play().catch(err => {
+                    console.log('Auto-play prevented:', err);
+                });
+
+            } catch (error) {
+                showStatus('playerStatus', `Failed to load video: ${error.message}`, 'error');
+                console.error('Error loading video:', error);
+            }
+        }
+
+        async function uploadVideo() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showStatus('uploadStatus', 'Please select a video file', 'error');
+                return;
+            }
+
+            // Check file size (limit to 50MB for demo)
+            const maxSize = 50 * 1024 * 1024; // 50 MB
+            if (file.size > maxSize) {
+                showStatus('uploadStatus', 'File too large. Please select a file under 50 MB.', 'error');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+
+            uploadBtn.disabled = true;
+            uploadProgress.classList.remove('hidden');
+            showStatus('uploadStatus', 'Uploading to Filecoin...', 'loading');
+
+            try {
+                // Read file as base64
+                const reader = new FileReader();
+
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 50; // First 50% is reading
+                        progressFill.style.width = `${progress}%`;
+                    }
+                };
+
+                reader.onload = async (e) => {
+                    const base64Data = e.target.result.split(',')[1];
+
+                    progressFill.style.width = '50%';
+
+                    // Upload to server
+                    const response = await fetch(`${SERVER_URL}/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            filename: file.name,
+                            data: base64Data
+                        })
+                    });
+
+                    progressFill.style.width = '100%';
+
+                    if (!response.ok) {
+                        throw new Error('Upload failed');
+                    }
+
+                    const result = await response.json();
+
+                    showStatus('uploadStatus',
+                        `✓ Upload successful! PieceCID: ${result.pieceCid}`,
+                        'success'
+                    );
+
+                    // Auto-fill the PieceCID input
+                    document.getElementById('pieceCidInput').value = result.pieceCid;
+
+                    // Reset
+                    setTimeout(() => {
+                        uploadProgress.classList.add('hidden');
+                        progressFill.style.width = '0%';
+                        uploadBtn.disabled = false;
+                    }, 2000);
+                };
+
+                reader.onerror = () => {
+                    throw new Error('Failed to read file');
+                };
+
+                reader.readAsDataURL(file);
+
+            } catch (error) {
+                showStatus('uploadStatus', `Upload failed: ${error.message}`, 'error');
+                uploadProgress.classList.add('hidden');
+                progressFill.style.width = '0%';
+                uploadBtn.disabled = false;
+                console.error('Upload error:', error);
+            }
+        }
+
+        // Allow Enter key to load video
+        document.getElementById('pieceCidInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadVideo();
+            }
+        });
+    </script>
+</body>
+
+</html>

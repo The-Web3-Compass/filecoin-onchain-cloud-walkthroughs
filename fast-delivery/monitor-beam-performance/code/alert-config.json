@@ -1,0 +1,48 @@
+{
+    "egressThresholds": {
+        "daily": {
+            "warning": 8,
+            "critical": 10,
+            "unit": "GB"
+        },
+        "monthly": {
+            "warning": 250,
+            "critical": 300,
+            "unit": "GB"
+        }
+    },
+    "costThresholds": {
+        "daily": {
+            "warning": 0.4,
+            "critical": 0.5,
+            "unit": "USDFC"
+        },
+        "monthly": {
+            "warning": 12,
+            "critical": 15,
+            "unit": "USDFC"
+        }
+    },
+    "performanceThresholds": {
+        "ttfb": {
+            "warning": 2000,
+            "critical": 5000,
+            "unit": "ms"
+        },
+        "successRate": {
+            "warning": 95,
+            "critical": 90,
+            "unit": "%"
+        },
+        "throughput": {
+            "warning": 1,
+            "critical": 0.5,
+            "unit": "MB/s"
+        }
+    },
+    "alertChannels": {
+        "console": true,
+        "email": false,
+        "webhook": false
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "name": "monitor-beam-performance",
+    "version": "1.0.0",
+    "description": "Monitor Beam CDN performance, track egress usage, costs, and provider metrics",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "collect": "node metrics-collector.js",
+        "costs": "node cost-tracker.js",
+        "alerts": "node alert-system.js",
+        "dashboard": "node dashboard.js",
+        "monitor": "node monitor-all.js"
+    },
+    "keywords": [
+        "filecoin",
+        "beam",
+        "cdn",
+        "monitoring",
+        "metrics",
+        "alerts"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.36.1",
+        "dotenv": "^16.0.3",
+        "ethers": "^6.14.3",
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "node-cron": "^3.0.3"
+    }
+}

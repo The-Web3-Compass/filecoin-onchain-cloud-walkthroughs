@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filecoin Beam Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #0090FF;
+            --bg: #0B0E14;
+            --card-bg: #161B22;
+            --text: #C9D1D9;
+            --header: #58A6FF;
+            --success: #238636;
+            --warning: #D29922;
+            --critical: #F85149;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #30363D;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--header);
+            margin: 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #30363D;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            color: #8B949E;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .warning {
+            color: var(--warning);
+        }
+
+        .critical {
+            color: var(--critical);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #30363D;
+        }
+
+        .alert-list {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #30363D;
+        }
+
+        .alert-item {
+            padding: 10px;
+            border-bottom: 1px solid #30363D;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Filecoin Beam CDN Monitor</h1>
+            <div id="last-updated">Status: Real-time</div>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">Success Rate</div>
+                <div id="success-rate" class="card-value">--%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Avg. Latency (TTFB)</div>
+                <div id="avg-ttfb" class="card-value">--ms</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Egress</div>
+                <div id="total-egress" class="card-value">-- GB</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Projected Monthly Cost</div>
+                <div id="projected-cost" class="card-value">-- USDFC</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="card-title">Throughput (MB/s)</div>
+                <canvas id="throughputChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="card-title">Latency Trends (ms)</div>
+                <canvas id="latencyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="alert-list">
+            <div class="card-title">Recent Alerts</div>
+            <div id="alerts-container">
+                <p>No active alerts</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const [metricsRes, costsRes, alertsRes] = await Promise.all([
+                    fetch('/api/metrics'),
+                    fetch('/api/costs'),
+                    fetch('/api/alerts')
+                ]);
+
+                const metrics = await metricsRes.json();
+                const costs = await costsRes.json();
+                const alerts = await alertsRes.json();
+
+                updateUI(metrics, costs, alerts);
+            } catch (err) {
+                console.error('Failed to fetch dashboard data', err);
+            }
+        }
+
+        function updateUI(metrics, costs, alerts) {
+            // Update Stats
+            if (metrics.summary) {
+                document.getElementById('success-rate').innerText = metrics.summary.successRate.toFixed(2) + '%';
+                document.getElementById('success-rate').className = 'card-value ' +
+                    (metrics.summary.successRate > 98 ? 'success' : (metrics.summary.successRate > 95 ? 'warning' : 'critical'));
+
+                document.getElementById('avg-ttfb').innerText = metrics.summary.avgTTFB.toFixed(2) + 'ms';
+                document.getElementById('total-egress').innerText = metrics.summary.totalEgressGB.toFixed(4) + ' GB';
+            }
+
+            if (costs.analysis) {
+                document.getElementById('projected-cost').innerText = costs.analysis.monthlyProjection.toFixed(4) + ' USDFC';
+            }
+
+            // Update Alerts
+            const alertsContainer = document.getElementById('alerts-container');
+            if (alerts.length > 0) {
+                alertsContainer.innerHTML = alerts.slice(-5).reverse().map(a => `
+                    <div class="alert-item">
+                        <span class="${a.type.toLowerCase()}">[${a.type}] ${a.category}: ${a.message}</span>
+                        <span style="font-size: 0.8rem; color: #8B949E;">${new Date(a.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Render Charts
+            renderCharts(metrics.operations);
+        }
+
+        let charts = {};
+
+        function renderCharts(ops) {
+            const labels = ops.slice(-20).map(o => new Date(o.timestamp).toLocaleTimeString());
+            const throughputData = ops.slice(-20).map(o => o.throughput);
+            const ttfbData = ops.slice(-20).map(o => o.ttfb);
+
+            if (charts.throughput) charts.throughput.destroy();
+            if (charts.latency) charts.latency.destroy();
+
+            const chartConfig = (label, data, color) => ({
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '22',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#30363D' }, ticks: { color: '#8B949E' } },
+                        x: { grid: { display: false }, ticks: { color: '#8B949E' } }
+                    }
+                }
+            });
+
+            charts.throughput = new Chart(document.getElementById('throughputChart'), chartConfig('MB/s', throughputData, '#0090FF'));
+            charts.latency = new Chart(document.getElementById('latencyChart'), chartConfig('ms', ttfbData, '#D29922'));
+        }
+
+        fetchData();
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+{
+    "name": "enable-beam-cdn",
+    "version": "1.0.0",
+    "description": "Enable Beam CDN for fast content delivery on Filecoin",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "keywords": [
+        "filecoin",
+        "beam",
+        "cdn",
+        "storage"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.36.1",
+        "dotenv": "^16.0.3",
+        "ethers": "^6.14.3"
+    }
+}

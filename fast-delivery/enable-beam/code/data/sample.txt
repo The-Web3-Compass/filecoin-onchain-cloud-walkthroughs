@@ -1,0 +1,18 @@
+Filecoin Beam CDN: Accelerating Decentralized Content Delivery
+
+This sample file demonstrates the power of Beam CDN on Filecoin. Beam is an incentivized data delivery layer that provides CDN-level performance for content stored on the Filecoin network.
+
+Traditional CDNs rely on centralized infrastructure, creating single points of failure and vendor lock-in. Filecoin Beam transforms this model by creating a decentralized network of retrieval providers who compete to deliver your content quickly and reliably.
+
+When you enable Beam CDN with `withCDN: true`, your uploads are optimized for fast retrieval through a global network of providers. These providers are incentivized through a paid-per-byte model, ensuring they maintain high performance and availability.
+
+Key Benefits:
+- Global edge distribution for low-latency access
+- Provider competition drives performance improvements
+- Cryptographic verification ensures data integrity
+- No vendor lock-in - switch providers seamlessly
+- Pay only for what you use
+
+This tutorial will show you how to enable Beam CDN, compare performance against standard retrieval, and understand the cost implications for production deployments.
+
+Let's explore how decentralized CDN technology can match or exceed traditional cloud providers while maintaining the benefits of Web3 infrastructure!
