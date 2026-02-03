@@ -1,17 +1,20 @@
 # Downloading and Verifying Data from Filecoin
 
-The previous tutorial demonstrated uploading data to Filecoin's decentralized storage network. You sent bytes into the network and received a PieceCID in return—a cryptographic identifier that serves as your data's permanent address. That identifier is not merely a reference number assigned by a centralized service. It is a mathematical proof derived from your exact bytes, and it enables something that traditional cloud storage cannot provide: verifiable retrieval.
+The previous tutorial demonstrated uploading data to Filecoin's decentralized storage network. You sent bytes into the network and received a PieceCID in return, a cryptographic identifier that serves as your data's permanent address. That identifier is not merely a reference number assigned by a centralized service. It is a mathematical proof derived from your exact bytes, and it enables something that traditional cloud storage cannot provide: verifiable retrieval.
 
 This walkthrough completes the storage cycle. You will use your PieceCID to download data from the network and perform cryptographic verification that proves the bytes you receive are identical to what you uploaded. This is not trust-based verification where you assume a provider maintained your data correctly. This is mathematical certainty achieved through byte-for-byte comparison.
 
 Traditional cloud storage requires trust. When you download a file from AWS S3, you trust that Amazon gave you the correct bytes. You have no independent way to verify they did not modify, corrupt, or substitute your data. Filecoin eliminates this trust requirement. The PieceCID you received during upload is a cryptographic commitment. Any provider claiming to store your data must be able to produce bytes that generate that exact identifier. If even a single bit differs, the verification fails.
+![traditional vs decentralized storage](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/download-verify/images/1.png)
 
 ## Prerequisites
 
 You need three things from the previous tutorials:
 
 **Environment Setup and Token Acquisition**: The Synapse SDK installed and configured
+
 **Payment Account Funding**: USDFC in your payment account (downloads cost less than uploads)
+
 **First Upload**: A PieceCID from the upload tutorial
 
 Without a PieceCID from the previous tutorial, go back and complete that module first. This walkthrough assumes you have data stored on Filecoin.
@@ -21,7 +24,9 @@ Without a PieceCID from the previous tutorial, go back and complete that module 
 Three operations demonstrate the complete download and verification workflow:
 
 **Download Execution**: Retrieving data from the network using a PieceCID
+
 **Binary Data Handling**: Working with `Uint8Array` responses and converting to usable formats
+
 **Cryptographic Verification**: Proving the downloaded data matches the original file exactly
 
 Each step shows how Filecoin's content-addressable architecture enables verifiable storage that centralized infrastructure cannot replicate.
@@ -50,6 +55,8 @@ Retrieval in Filecoin differs from traditional web downloads. When you request d
 **Negotiation**: The SDK contacts a provider and requests the data.
 **Transfer**: The provider streams the data to your client.
 **Verification**: The SDK verifies that the received data matches the requested PieceCID.
+
+![how retrieval works](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/download-verify/images/2.png)
 
 This content-addressable approach means you ask *what* you want, not *where* to get it. You do not need to know the provider's IP address or the specific server implementation details.
 
@@ -328,16 +335,13 @@ When building applications on Filecoin mainnet, several additional factors becom
 
 **Large Files**: The current SDK supports files up to 200 MiB. Larger datasets require chunking. Each chunk uploads separately with its own PieceCID. Your application must track which PieceCIDs compose the complete file and reassemble chunks after download.
 
-## Next Steps
+## Conclusion
 
-You now understand the complete storage workflow: funding payment accounts, uploading data, and retrieving it with verification. The [Synapse SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) covers advanced topics:
+You have now closed the loop on decentralized storage. By uploading a file, obtaining its PieceCID, and then retrieving and verifying it, you've demonstrated the complete lifecycle of data on Filecoin.
 
-**Datasets**: Grouping related pieces for easier management
-**Metadata**: Attaching application-specific tags to pieces and datasets
-**Provider Selection**: Choosing specific providers based on reputation, geography, or cost
-**Deal Renewal**: Extending storage duration before deals expire
-**Aggregate PieceCIDs**: Combining multiple chunks into a single identifier for large files
+This isn't just about moving bytes around; it's about shifting the paradigm of trust. In the traditional cloud, you trust Amazon or Google to give you back your file. Here, you trust the mathematics. When that `Buffer.compare` returns `true`, you have cryptographic proof that the network served you exactly what you asked for—bit for bit, unaltered and uncensored.
 
-The foundational concepts from this tutorial series—payment accounts, operator allowances, PieceCID mechanics, upload workflows, and verification—apply directly when building production applications on Filecoin mainnet. The primary differences are network configurations (mainnet RPC URLs instead of testnet) and the use of real FIL and USDC instead of test tokens.
+You've moved from "believing" your data is safe to "proving" it.
 
-Filecoin provides infrastructure that centralized cloud storage cannot replicate: cryptographic proof of storage, economic guarantees enforced by blockchain consensus, and genuine decentralization where no single entity controls your data. The complexity you navigated in these tutorials—understanding PieceCIDs, managing payment channels, verifying downloads—buys you properties that matter for applications requiring censorship resistance, long-term archival guarantees, or provable data integrity.
+With these basics mastered, funding accounts, managing allowances, uploading, and verifying downloads, you possess the foundational skills to build robust, unstoppable applications. Whether you're archiving public datasets, hosting dApp frontends, or securing personal backups, the principles remain the same: Content addressing over location addressing, and verification over trust.
+
