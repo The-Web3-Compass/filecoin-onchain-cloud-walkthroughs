@@ -223,6 +223,9 @@ main().catch((err) => {
 
 ### Understanding the Code
 
+
+![code-flow](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/get-token/images/3.png)
+
 **SDK Initialization**
 
 ```javascript
