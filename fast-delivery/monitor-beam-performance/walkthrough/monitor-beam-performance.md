@@ -1,180 +1,85 @@
-# Monitor Beam Performance: Metrics, Egress, and Alerts
+# Monitor Beam Performance: The Observability Stack
 
-In decentralized content delivery, visibility is power. When you enable **Beam CDN** on Filecoin, you're not just moving data; you're entering an incentivized market where performance correlates directly with reliability and cost-efficiency.
+## The Visibility Paradox
 
-This guide explores the vital work of monitoring your Beam CDN deployments. You will learn how to track delivery health, manage egress costs, and set up an automated alerting system to ensure your decentralized infrastructure remains robust and budget-friendly.
+In a centralized world, visibility is easy. You own the server. You own the router. You own the logs. If something is slow, you log in and check `top` or check your Nginx stats.
+
+In a decentralized world, visibility is hard.
+
+When you use **Beam CDN**, you are orchestrating a fleet of independent storage providers scattered across the globe. You do not have SSH access to their machines. You cannot see their internal load averages. 
+
+This creates a paradox: **You have more redundancy but less visibility.**
+
+To build a production-grade application on Filecoin, you must solve this paradox. You must build an **Observability Stack** that treats the network as an adversarial environment. You must actively probe, verify, and measure every interaction.
+
+This module is a masterclass in building that stack. We have broken it down into three specialized walkthroughs, each tackling a different layer of the problem.
 
 ---
 
-## What You Will Learn
+## 🏗️ The Series
 
-1. **The KPIs of Beam CDN**: Understanding TTFB, Throughput, and Success Rates in a decentralized context.
-2. **Egress Tracking**: How to monitor data transfer and prevent "bill shock."
-3. **Provider Performance**: Identifying high-performing storage providers in your delivery network.
-4. **Automated Alerting**: Setting up thresholds for usage and performance degradation.
-5. **Real-time Dashboarding**: Building a monitoring center for your Filecoin storage operations.
+### Part 1: Performance Monitoring & Metrics
+Before you can optimize, you must measure. In this guide, we build a "Heartbeat Prober", an autonomous agent that continuously audits the network.
+*   **Key Concept**: Differentiating **Time to First Byte (TTFB)** (Latency) from **Throughput** (Bandwidth).
+*   **The Build**: A script that performs synthetic transactions to create a "Clean Room" performance baseline.
+
+### Part 2: Costs, Egress, & Alerting
+**The Control Layer.**
+Filecoin's "Streaming Payment" model is financially powerful but dangerous if uncontrolled. Here, we build the financial firewalls that keep your project solvent.
+*   **Key Concept**: The **Circuit Breaker Pattern**—using code to physically cut off funding when thresholds are breached.
+*   **The Build**: An automated CFO that calculates real-time burn rates and enforces budget caps.
+
+### Part 3: Real-Time Observability
+**The Governance Layer.**
+Raw data is useless if you can't understand it at a glance. We construct a "Mission Control" dashboard that converts JSON logs into situational awareness.
+*   **Key Concept**: **Geometric Monitoring**—why measuring from one location is a lie, and how to monitor globally.
+*   **The Build**: A real-time visualization engine that answers "Is the system healthy?" in under 500ms.
 
 ---
 
 ## Prerequisites
 
-Before starting, ensure you have completed the following:
-- [Enable Beam CDN](file:///home/sethuraman/Documents/Projects/Web3-Compass/filecoin-onchain-cloud-walkthroughs/fast-delivery/enable-beam/walkthrough/enable-beam.md) walkthrough.
-- A Filecoin wallet with **USDFC** tokens on the Calibration Testnet.
-- Node.js (v18+) installed.
+To get the most out of this series, you should have:
+
+1.  **Funded Wallet**: A dedicated MetaMask account for development (Calibration Testnet).
+2.  **Beam Knowledge**: Completed the [Enable Beam CDN](../enable-beam/walkthrough/enable-beam.md) walkthrough.
+3.  **Node.js Context**: Familiarity with `ethers.js` and async/await patterns.
 
 ---
 
-## Understanding the Monitoring Stack
+## Quick Start: The "Just Run It" Path
 
-Unlike traditional centralized CDNs that provide black-box metrics, Filecoin Beam operates on a **Paid-per-Byte** model with cryptographic attestations. Monitoring this requires three distinct layers:
+If you want to see the system in action before reading the deep dives, you can find the [complete code in the repository](https://github.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/tree/main/fast-delivery/monitor-beam-performance/code).
 
-### 1. The Performance Layer (Metrics)
-Tracks the Quality of Service (QoS). The primary metrics are:
-- **Time to First Byte (TTFB)**: The delay between a request and the first bit of data arriving. Critical for user experience.
-- **Throughput**: The speed of data transfer (MB/s).
-- **Success Rate**: The percentage of retrieval requests that complete without error.
-
-### 2. The Economic Layer (Costs)
-Tracks your implementation's financial health.
-- **Egress Usage**: Total GB transferred out of the network.
-- **Spend Rate**: How quickly your USDFC balance is depleting.
-- **Cost per GB**: The effective rate you are paying for retrieval.
-
-### 3. The Defensive Layer (Alerts)
-The "safety net" that monitors the other two layers and triggers notifications when behavior deviates from the norm.
-
----
-
-## Step 1: Project Setup
-
-Create a new directory for your monitoring project and initialize it.
-
+**1. Install Dependencies**
 ```bash
-mkdir monitor-beam && cd monitor-beam
-npm init -y
+npm install
 ```
 
-### Dependencies
-
-We need the Synapse SDK for interacting with Filecoin, `ethers` for unit conversions, and `express` for our dashboard.
-
+**2. Fund Your Operator**
 ```bash
-npm install @filoz/synapse-sdk ethers dotenv express cors node-cron
+npm run fund
 ```
+*(Deposits 2.0 USDFC into your payment account)*
 
-Update your `package.json` to use ES Modules by adding `"type": "module"`.
-
----
-
-## Step 2: Metrics Collection
-
-The heart of monitoring is data collection. Since the SDK performs the operations, we wrap our storage calls with measurement logic to capture real-time performance.
-
-### `metrics-collector.js` breakdown
-
-This script performs a "prober" or "heartbeat" operation—a common pattern in SRE (Site Reliability Engineering) where you periodically perform a real operation to verify system health.
-
-```javascript
-// measuring TTFB and Throughput
-const downloadStart = Date.now();
-const downloadedData = await context.download(pieceCid);
-const downloadEnd = Date.now();
-
-const durationSeconds = (downloadEnd - downloadStart) / 1000;
-const throughput = (downloadedData.length / 1024 / 1024) / durationSeconds;
+**3. Generate Data**
+```bash
+npm run collect
 ```
+*(Run this 3-4 times to build a history)*
 
-> [!TIP]
-> In production, you should record metrics for *every* user request, not just periodic probes. Use a middleware pattern to log egress and latency for all downloads.
-
----
-
-## Step 3: Tracking Costs and Egress
-
-On Filecoin Beam, you pay for data as it flows. Tracking your `Payment Account` balance over time allows you to calculate the **Burn Rate**.
-
-### Cost Analysis Logic
-In `cost-tracker.js`, we compare consecutive balance snapshots:
-1. **Delta Balance**: `Previous Balance - Current Balance` = Amount spent in interval.
-2. **Usage Correlation**: Divide the delta by the bytes transferred in that same interval to get your **Actual Cost per GB**.
-
-```javascript
-const dailySpendingRate = totalSpent / daysDiff;
-const monthlyProjection = dailySpendingRate * 30;
-```
-
----
-
-## Step 4: Setting Up the Alert System
-
-Monitoring is useless if nobody reacts to it. An automated alert system monitors your JSON data files and triggers warnings when thresholds are crossed.
-
-### Configuring Thresholds
-In `alert-config.json`, we define our "Service Level Objectives" (SLOs):
-
-```json
-{
-  "egressThresholds": {
-    "daily": { "critical": 10, "unit": "GB" }
-  },
-  "performanceThresholds": {
-    "ttfb": { "warning": 2000, "critical": 5000, "unit": "ms" }
-  }
-}
-```
-
-If your average TTFB spikes above 5 seconds, it might indicate that the storage providers currently serving your data are under heavy load or that your geographic coverage needs optimization.
-
----
-
-## Step 5: Building the Dashboard
-
-The web dashboard provides a "Single Pane of Glass" view of your decentralized delivery network.
-
-### Real-time Visualization
-Using **Chart.js**, we plot:
-- **Throughput Trends**: Allows you to see if performance degrades over time.
-- **Latency Spikes**: Helps correlate performance drops with specific network events.
-- **Alert Ticker**: A chronological log of system warnings.
-
-To start the dashboard:
+**4. Launch Mission Control**
 ```bash
 npm run dashboard
 ```
-Visit `http://localhost:3000` to see your metrics in action.
+Open `http://localhost:3000` to see your decentralized infrastructure come to life.
 
 ---
 
-## Production Considerations
+## Understanding The Architecture
 
-### 1. Persistence
-For this tutorial, we use JSON files. In a production environment, use a **Time-Series Database (TSDB)** like **Prometheus**, **InfluxDB**, or **TimescaleDB**. These are optimized for handling millions of timestamped data points.
+The Quick Start got you up and running, but to truly own this infrastructure, you need to understand how it works.
 
-### 2. Geometric Monitoring
-Beam CDN performance varies by region. If your users are global, run metrics probes from multiple geographic regions (e.g., using AWS Lambda or GitHub Actions in different zones) to ensure high performance for all users.
+In the following walkthroughs, we will deconstruct these scripts line-by-line. We will explain the "Why" behind the "How"—covering everything from the philosophy of streaming payments to the architecture of decentralized probing.
 
-### 3. Automated Re-balancing
-If your monitoring detects a consistently failing provider or high latency for a specific PieceCID, you can trigger an automated **Re-upload** or **Self-Selection** of a different provider to maintain your SLOs.
-
----
-
-## Troubleshooting
-
-### "Payment account balance not decreasing"
-Beam CDN uses optimistic delivery. There might be a slight delay between a download and the payment being settled on-chain. Wait a few minutes or perform a larger transfer (10MB+) to see the balance change clearly.
-
-### "Metrics showing 0ms TTFB"
-If you are downloading the same file repeatedly, it may be cached in the Beam CDN node or locally. For accurate monitoring, use different PieceCIDs or disable local caching during tests.
-
-### "Dashboard charts are empty"
-Ensure you have run `npm run collect` at least once to generate the initial `metrics.json` file. The charts require data points to render.
-
----
-
-## Next Steps
-
-Now that you can monitor your performance, you might want to explore:
-- **Multi-Cloud Failover**: Using monitoring to switch between Filecoin and traditional S3 based on availability.
-- **Governance via Alerts**: Automatically restricting user egress if they exceed specific cost quotas.
-- **Historical Analysis**: Comparing Beam CDN performance against standard Filecoin retrieval over long periods.
+**Continue to Part 1: Performance Monitoring**

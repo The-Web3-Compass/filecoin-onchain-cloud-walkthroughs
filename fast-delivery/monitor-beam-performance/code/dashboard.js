@@ -23,7 +23,14 @@ app.get('/api/metrics', (req, res) => {
     if (existsSync(METRICS_FILE)) {
         res.json(JSON.parse(readFileSync(METRICS_FILE, 'utf-8')));
     } else {
-        res.status(404).json({ error: 'Metrics data not found' });
+        res.json({
+            summary: {
+                successRate: 0,
+                avgTTFB: 0,
+                totalEgressGB: 0
+            },
+            operations: []
+        });
     }
 });
 
@@ -31,7 +38,18 @@ app.get('/api/costs', (req, res) => {
     if (existsSync(COST_FILE)) {
         res.json(JSON.parse(readFileSync(COST_FILE, 'utf-8')));
     } else {
-        res.status(404).json({ error: 'Cost data not found' });
+        // Return default empty structure to prevent frontend errors
+        res.json({
+            snapshots: [],
+            analysis: {
+                totalSpent: 0,
+                costPerGB: 0,
+                dailySpendingRate: 0,
+                monthlyProjection: 0,
+                daysCovered: 0,
+                lastUpdated: new Date().toISOString()
+            }
+        });
     }
 });
 

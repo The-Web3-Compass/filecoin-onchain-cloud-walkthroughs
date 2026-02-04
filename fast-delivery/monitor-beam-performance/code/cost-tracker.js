@@ -63,6 +63,7 @@ function analyzeCosts(snapshots, metrics) {
             costPerGB: 0,
             dailySpendingRate: 0,
             monthlyProjection: 0,
+            daysCovered: 0,
             lastUpdated: new Date().toISOString()
         };
     }

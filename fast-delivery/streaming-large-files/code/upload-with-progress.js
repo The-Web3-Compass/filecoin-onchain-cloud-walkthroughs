@@ -84,7 +84,7 @@ async function uploadWithProgress(synapse, filepath) {
             withCDN: true,
             metadata: {
                 filename: filepath.split('/').pop(),
-                size: fileSize,
+                size: String(fileSize),
                 uploadedAt: new Date().toISOString()
             }
         });
@@ -177,12 +177,13 @@ async function main() {
     // ========================================================================
     console.log('📄 Step 3: Checking for Test Files...\n');
 
-    const dataDir = join(__dirname, 'data');
-    const testFile = join(dataDir, 'test-10mb.bin');
+    const dataDir = join(__dirname, 'video');
+    const testFile = join(dataDir, 'video.mp4');
 
     if (!existsSync(testFile)) {
-        console.log('⚠️  Test file not found!');
-        console.log('Please run "npm run generate" first to create test files.');
+        console.log('⚠️  Video file not found!');
+        console.log('Please download the video and save it as "video/video.mp4".');
+        console.log('Link: https://pixabay.com/videos/alps-sunrise-fog-sea-of-fog-clouds-328740/');
         process.exit(1);
     }
 
@@ -196,7 +197,7 @@ async function main() {
     const uploadResults = [];
 
     try {
-        // Upload the 10MB test file
+        // Upload the video file
         const result = await uploadWithProgress(synapse, testFile);
         uploadResults.push(result);
 

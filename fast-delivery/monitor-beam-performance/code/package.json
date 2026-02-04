@@ -5,6 +5,7 @@
     "type": "module",
     "main": "index.js",
     "scripts": {
+        "fund": "node fund-account.js",
         "collect": "node metrics-collector.js",
         "costs": "node cost-tracker.js",
         "alerts": "node alert-system.js",
