@@ -5,6 +5,7 @@ The previous tutorials demonstrated storing and retrieving individual files on F
 This walkthrough introduces **datasets** - Filecoin's mechanism for managing collections of related files as cohesive units. Instead of tracking dozens of individual PieceCIDs and managing payment streams for each piece separately, you create a dataset that groups related content together. This provides unified metadata, simplified payment management, and easier organization of your stored data.
 
 Traditional cloud storage handles this through folders and directories. You create a folder, upload files into it, and the provider manages the relationship. Filecoin takes a different approach that provides the same organizational benefits while maintaining the cryptographic guarantees and decentralization that make blockchain storage valuable. Datasets exist as on-chain entities with associated metadata, payment rails, and proof requirements. You can verify their existence, query their contents, and audit their storage proofs - all without trusting a centralized provider.
+![dataset-architecture](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/datasets/images/1.png)
 
 ## Prerequisites
 
@@ -58,6 +59,8 @@ When you create a storage context (dataset) and upload files to it, you establis
 5. Stores metadata on-chain for querying
 
 Now those 50 files share metadata, a unified payment stream, and a logical grouping that exists on-chain. You can query "show me all pieces in the Q4 2025 Financial Reports dataset" rather than maintaining your own mapping. The blockchain understands the relationship.
+
+![dataset-difference](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/datasets/images/2.png)
 
 ### Key Differences
 

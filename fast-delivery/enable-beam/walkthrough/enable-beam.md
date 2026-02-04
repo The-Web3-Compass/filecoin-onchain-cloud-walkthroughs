@@ -8,6 +8,8 @@ Traditional content delivery networks solve a straightforward problem: users far
 
 Filecoin Beam reimagines CDN architecture for decentralized infrastructure. Instead of trusting a single provider's edge network, Beam creates a marketplace where independent retrieval providers compete to serve your content. These providers earn rewards for fast, reliable delivery, creating economic incentives that align with user experience. The result is CDN-level performance without vendor lock-in, built on cryptographic verification rather than trust.
 
+![beam-architecture](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/fast-delivery/enable-beam/images/1.png)
+
 ## Prerequisites
 
 This tutorial assumes no prior completion of other modules. We will build everything from scratch, starting with environment setup and ending with production deployment strategies.
@@ -305,6 +307,8 @@ Standard Filecoin retrieval works like this: you request data by PieceCID, the S
 
 Beam CDN introduces a competitive retrieval layer. When you enable CDN, your upload becomes visible to a network of specialized retrieval providers. These providers operate infrastructure optimized specifically for fast delivery - think SSD caching, edge locations near major population centers, and parallel request handling. They compete economically to serve your content quickly because faster service wins more requests, generating more revenue.
 
+![standard vs beam](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/fast-delivery/enable-beam/images/3.png)
+
 This creates several practical differences from standard retrieval:
 
 **Geographic Distribution**: Beam providers operate globally, caching popular content near users. Request data from Tokyo and a Tokyo-based provider serves it. Request from São Paulo and a South American provider responds. Standard retrieval might route all requests to wherever the original storage provider operates.
@@ -324,6 +328,8 @@ Beam CDN operates as a layer above Filecoin's storage network. Grasping this arc
 ### The Three-Layer Model
 
 Filecoin storage with Beam CDN involves three distinct layers:
+
+![3 layer model](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/fast-delivery/enable-beam/images/2.png)
 
 **Application Layer**: Your code using the Synapse SDK. When you create a storage context with `withCDN: true`, you signal that uploads through this context should be CDN-enabled. The SDK handles all communication with lower layers.
 

@@ -65,6 +65,8 @@ Before diving into operations, let's clarify how funds flow through the Filecoin
 
 ### The Three-Layer Model
 
+![3 states of USDFC](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/storage-basics/advanced-payment-management/images/1.png)
+
 Your USDFC exists in three potential states:
 
 **1. Wallet Balance**
