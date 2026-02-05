@@ -1,0 +1,13 @@
+{
+    "name": "payment-architecture-hybrid",
+    "version": "1.0.0",
+    "description": "Demonstration of Hybrid (Freemium) payment model",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.36.1",
+        "dotenv": "^16.4.5"
+    }
+}
