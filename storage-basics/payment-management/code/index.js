@@ -1,6 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
 import { ethers } from 'ethers';
+
+// Load .env.local first (if it exists), then .env
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 async function main() {
     console.log("Managing Filecoin Payment Accounts...\n");
