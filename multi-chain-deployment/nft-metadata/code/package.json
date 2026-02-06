@@ -1,0 +1,16 @@
+{
+    "name": "nft-metadata",
+    "version": "1.0.0",
+    "description": "Store NFT metadata on Filecoin with IPFS-compatible addressing",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js",
+        "server": "node server.js"
+    },
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.36.1",
+        "dotenv": "^16.4.5",
+        "ethers": "^6.13.5",
+        "express": "^4.18.2"
+    }
+}
