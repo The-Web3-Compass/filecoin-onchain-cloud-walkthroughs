@@ -43,6 +43,8 @@ Hybrid architecture introduces a **decision layer** between user operations and 
 - Do they have a connected wallet with funds?
 - What tier are they currently on?
 
+![hybrid-architecture](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/payment-architecture/hybrid/images/1.png)
+
 Based on this evaluation, the system routes to either treasury-sponsored execution (dApp-Pays path) or user-funded execution (User-Pays path).
 
 The practical implications create a best-of-both-worlds scenario:

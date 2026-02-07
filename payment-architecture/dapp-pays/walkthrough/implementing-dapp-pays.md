@@ -35,6 +35,8 @@ Each step reveals how your application becomes the economic actor in storage tra
 
 In dApp-Pays architecture, your application operates a **treasury wallet** - an Ethereum account holding tFIL (for gas) and USDFC (for storage). This wallet has its own payment account, already funded and with operator approvals configured. When users interact with your application, the treasury wallet signs all transactions and pays all costs.
 
+![dapp-pays-model](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/payment-architecture/dapp-pays/images/1.png)
+
 The user experience transforms completely:
 
 **For users:**
@@ -59,6 +61,8 @@ This creates different trust assumptions than User-Pays. Users must trust your a
 ## How dApp-Pays Architecture Works
 
 The dApp-Pays flow inverts the User-Pays relationship:
+
+![dapp-pays-flow](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/payment-architecture/dapp-pays/images/2.png)
 
 ### Phase 1: Treasury Preparation (One-Time Setup)
 
@@ -111,9 +115,78 @@ Your application must monitor treasury health:
 
 Running out of treasury funds breaks your entire application.
 
-## Step 1: Create the dApp-Pays Script
+## Step 1: Scaffold the Project
 
-Create a file named `index.js` in your `code` directory:
+The dApp-Pays model positions your application as the economic actor. The project you build here represents that backend — the piece of infrastructure that holds treasury credentials and sponsors storage on behalf of users. Getting the scaffolding right matters because a misconfigured module system or a missing dependency produces errors that look like SDK bugs but are really project setup issues.
+
+**Create a dedicated directory:**
+
+```bash
+mkdir dapp-pays-demo
+cd dapp-pays-demo
+```
+
+**Initialize and configure the project:**
+
+```bash
+npm init -y
+```
+
+Replace the generated `package.json` contents with:
+
+```json
+{
+  "name": "dapp-pays-demo",
+  "version": "1.0.0",
+  "description": "Demonstration of dApp-Pays (Sponsored) payment model",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@filoz/synapse-sdk": "^0.36.1",
+    "dotenv": "^16.4.5"
+  }
+}
+```
+
+The `"type": "module"` entry tells Node.js to interpret `.js` files as ES modules. Without it, the `import` statements the SDK requires will fail with a syntax error before your code even runs.
+
+**Pull in the dependencies:**
+
+```bash
+npm install
+```
+
+This installs two packages:
+
+- **@filoz/synapse-sdk** — the Filecoin interface that handles wallet operations, storage deals, and payment account management behind clean method calls.
+- **dotenv** — reads environment variables from a local file so your treasury key never touches source code.
+
+**Store your treasury credentials:**
+
+Create a `.env` file at the project root:
+
+```
+PRIVATE_KEY=your_treasury_private_key_here
+```
+
+In this architecture, this key represents your *application's treasury wallet* — the account that funds storage for all users. Export it from MetaMask (Account Details → Show Private Key) and paste it here. This should be the same wallet you funded with tFIL and deposited USDFC into during the prerequisites.
+
+In production, a `.env` file is insufficient. Treasury keys warrant secrets management infrastructure (AWS Secrets Manager, HashiCorp Vault, or similar). For this walkthrough, `.env` keeps things focused on architecture rather than DevOps.
+
+**Protect the key from version control:**
+
+```
+node_modules/
+.env
+```
+
+Save that as `.gitignore`. A leaked treasury key is worse than a leaked user key — it drains the account that your entire application depends on, not just one user's funds. Treat this habit as non-negotiable from day one.
+
+## Step 2: Create the dApp-Pays Script
+
+Create `index.js` in your project directory:
 
 ```javascript
 import dotenv from 'dotenv';
@@ -395,13 +468,17 @@ Checking payment rails confirms the expected economic structure: your treasury i
 
 This verification step helps during debugging. If you accidentally created rails under a user context (due to a bug), this check would reveal the discrepancy.
 
-## Step 2: Run the Script
+## Step 3: Run the Script
 
-Navigate to the `code` directory and execute:
+With your project scaffolded and treasury credentials in place, run the demo:
 
 ```bash
-cd dapp-pays/code
-npm install
+npm start
+```
+
+Or directly:
+
+```bash
 node index.js
 ```
 
