@@ -36,6 +36,8 @@ Each step reveals how your application's relationship to money changes when user
 
 In the User-Pays model, your application never touches funds. Users arrive with their own wallets containing tFIL (for gas) and USDFC (for storage). They have already funded their payment accounts and approved storage operators. Your application simply triggers operations that the user's wallet executes.
 
+![user-pays-model](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/payment-architecture/user-pays/images/1.png)
+
 This mirrors how most decentralized applications work. A DEX like Uniswap does not hold your tokens - it provides an interface for swapping tokens that you own. A NFT marketplace like OpenSea does not own the NFTs - it facilitates transactions between buyers and sellers. Similarly, a User-Pays storage application does not pay for storage - it orchestrates uploads using funds the user controls.
 
 The practical implications are significant:
@@ -58,6 +60,8 @@ The tradeoff crystallizes around onboarding friction. Users must understand cryp
 
 Before writing code, understanding the relationship between wallets, payment accounts, and operators clarifies what your application actually does.
 
+![wallet-payment-account](https://raw.githubusercontent.com/The-Web3-Compass/filecoin-onchain-cloud-walkthroughs/refs/heads/main/payment-architecture/user-pays/images/2.png)
+
 When a user connects to your application, they provide access to their **wallet**. This wallet holds tFIL (for gas fees) and potentially USDFC (the stablecoin used for storage payments). But storage providers do not charge wallets directly.
 
 Instead, the user has a **payment account** - a separate on-chain entity that holds USDFC specifically for storage operations. Users deposit USDFC from their wallet into their payment account. This separation exists for security: if a malicious operator overcharges, they drain the payment account, not the entire wallet.
@@ -73,9 +77,76 @@ Your application's role in User-Pays architecture:
 
 Notice what's missing: your application never deposits funds, never approves operators, never manages USDFC. Those are user responsibilities. Your application verifies readiness and executes operations.
 
-## Step 1: Create the User-Pays Script
+## Step 1: Set Up the Project
 
-Create a file named `index.js` in your `code` directory:
+Before writing any code, we need a clean project directory with the right configuration. This keeps dependencies isolated and ensures the SDK loads correctly.
+
+**Create your project directory:**
+
+```bash
+mkdir user-pays-demo
+cd user-pays-demo
+```
+
+**Initialize the project:**
+
+```bash
+npm init -y
+```
+
+This generates a default `package.json`. Open it and modify it to enable ES modules and add a start script:
+
+```json
+{
+  "name": "user-pays-demo",
+  "version": "1.0.0",
+  "description": "Demonstration of User-Pays payment model",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@filoz/synapse-sdk": "^0.36.1",
+    "dotenv": "^16.4.5"
+  }
+}
+```
+
+The `"type": "module"` line is critical. The Synapse SDK uses ES module imports, and Node.js defaults to CommonJS without this setting. Omit it and your first `import` statement throws a syntax error.
+
+**Install dependencies:**
+
+```bash
+npm install
+```
+
+Two packages handle everything this walkthrough needs:
+
+- **@filoz/synapse-sdk** provides the interface to Filecoin — wallet operations, storage interactions, and payment account management. It abstracts the blockchain plumbing into straightforward method calls.
+- **dotenv** loads your private key from environment variables, keeping secrets out of source code.
+
+**Configure your environment:**
+
+Create a `.env` file in your project root:
+
+```
+PRIVATE_KEY=your_private_key_here
+```
+
+Export your private key from MetaMask (Account Details → Show Private Key) and paste it here. This should be the same wallet you funded with tFIL and USDFC during the prerequisites.
+
+Add a `.gitignore` to prevent accidental exposure:
+
+```
+node_modules/
+.env
+```
+
+This is not a suggestion. Bots scan GitHub continuously for exposed private keys and drain wallets within seconds. Even on testnets, building the right habits matters.
+
+## Step 2: Create the User-Pays Script
+
+Create a file named `index.js` in your project directory:
 
 ```javascript
 import dotenv from 'dotenv';
@@ -281,13 +352,17 @@ Payment rails are the on-chain streams that transfer USDFC from payer to provide
 
 This verification step is optional but valuable for debugging and audit purposes. It proves your User-Pays architecture works correctly - the user truly is the payer, not some intermediary.
 
-## Step 2: Run the Script
+## Step 3: Run the Script
 
-Navigate to the `code` directory and execute:
+With dependencies installed and your `.env` configured, execute the script:
 
 ```bash
-cd user-pays/code
-npm install
+npm start
+```
+
+Or run it directly:
+
+```bash
 node index.js
 ```
 
