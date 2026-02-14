@@ -1,0 +1,15 @@
+{
+    "name": "historical-analysis",
+    "version": "1.0.0",
+    "description": "Historical analysis of Filecoin storage proofs using GraphQL",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@filoz/synapse-sdk": "^0.1.0",
+        "dotenv": "^16.3.1",
+        "graphql-request": "^6.1.0"
+    }
+}
