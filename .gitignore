@@ -17,6 +17,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Runtime artifacts
+agent-card.json
+
 # Logs
 *.log
 npm-debug.log*
