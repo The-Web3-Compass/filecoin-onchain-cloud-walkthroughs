@@ -131,9 +131,9 @@
                 ]
             }
         ],
-        "capstone": {
-            "id": "capstone-project",
-            "name": "Storage Basics Capstone",
+        "assignment": {
+            "id": "module-assignment",
+            "name": "Storage Basics Module Assignment",
             "description": "Build a simple file storage app with file upload, list stored files with metadata, download on click, show PieceCIDs and sizes, and display current balance. Demonstrates the complete storage lifecycle.",
             "topics": [
                 "File Upload",
@@ -203,9 +203,9 @@
                 ]
             }
         ],
-        "capstone": {
-            "id": "capstone-project",
-            "name": "Fast Delivery Capstone",
+        "assignment": {
+            "id": "module-assignment",
+            "name": "Fast Delivery Module Assignment",
             "description": "Build a video streaming app with file upload, stream videos using Beam CDN, show loading progress, display playback with HTML5 video player, and track egress costs per video.",
             "topics": [
                 "Upload Videos",
@@ -278,9 +278,9 @@
                 ]
             }
         ],
-        "capstone": {
-            "id": "capstone-project",
-            "name": "Multi-Chain Deployment Capstone",
+        "assignment": {
+            "id": "module-assignment",
+            "name": "Multi-Chain Deployment Module Assignment",
             "description": "Upload NFT metadata using filecoin-pin to generate IPFS CIDs. Deploy NFT contracts on Base, Arbitrum, and Polygon that reference the same IPFS URIs. Build gallery showing all NFTs with chain badges, click to view full metadata and verify storage proofs. Demonstrates how single IPFS-compatible storage layer serves multiple chains.",
             "topics": [
                 "Upload NFT Metadata with filecoin-pin",
@@ -359,9 +359,9 @@
                 ]
             }
         ],
-        "capstone": {
-            "id": "capstone-project",
-            "name": "Payment Architecture Capstone",
+        "assignment": {
+            "id": "module-assignment",
+            "name": "Payment Architecture Module Assignment",
             "description": "Build a Storage-as-a-Service platform implementing all three payment patterns (User-Pays, dApp-Pays, and Hybrid). Include a dashboard with payment model selector, usage tracking, cost breakdown per user, and payment rail health monitoring.",
             "topics": [
                 "Implement User-Pays Model",
@@ -438,9 +438,9 @@
                 ]
             }
         ],
-        "capstone": {
-            "id": "capstone-project",
-            "name": "Production Monitoring Capstone",
+        "assignment": {
+            "id": "module-assignment",
+            "name": "Production Monitoring Module Assignment",
             "description": "Build a comprehensive Storage Operations Dashboard combining real-time monitoring, historical analysis, and automated alerts. Include status panels showing contract addresses and network info, balance widgets with health indicators, provider reliability charts, cost analytics, proof submission timelines, active alerts with severity levels, and SLA compliance reports.",
             "topics": [
                 "Real-Time Status Panel",
