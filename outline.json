@@ -149,6 +149,22 @@
         "description": "Learn how to accelerate content delivery using Filecoin Beam CDN, monitor performance metrics, and stream large media files efficiently",
         "resources": [
             {
+                "id": "standard-vs-beam-video",
+                "name": "Standard vs. Beam Retrieval",
+                "type": "video",
+                "description": "4-minute comparison of standard retrieval and Filecoin Beam, explaining the performance differences and when to use each option",
+                "url": "https://youtu.be/NesFgEI_ZQk",
+                "duration": "4 min"
+            },
+            {
+                "id": "how-beam-works-video",
+                "name": "How Filecoin Beam Works",
+                "type": "video",
+                "description": "6-minute deep dive into the technical architecture behind Filecoin Beam's CDN-level performance and edge distribution",
+                "url": "https://youtu.be/P3YxMJIFHDc",
+                "duration": "6 min"
+            },
+            {
                 "id": "enable-beam",
                 "name": "Enabling Beam CDN for Fast Content Delivery",
                 "type": "walkthrough",
@@ -165,6 +181,14 @@
                     "Geographic Distribution and Latency Reduction",
                     "When to Use Beam CDN"
                 ]
+            },
+            {
+                "id": "egress-pricing-video",
+                "name": "Egress Pricing & Credits",
+                "type": "video",
+                "description": "4-minute explanation of how egress is measured and billed on Filecoin Beam, including current pricing and credit setup",
+                "url": "https://youtu.be/FmNUSmih0jc",
+                "duration": "4 min"
             },
             {
                 "id": "monitor-beam-performance",
@@ -221,6 +245,22 @@
         "description": "Build applications that accept payments on any L2 chain while storing data on Filecoin, with quota management and NFT metadata support",
         "resources": [
             {
+                "id": "why-cross-chain-video",
+                "name": "Why Cross-Chain Storage?",
+                "type": "video",
+                "description": "5-minute introduction explaining why every blockchain doesn't need its own storage layer and how Filecoin provides unified storage for multi-chain applications",
+                "url": "https://youtu.be/PLdeilHvLY8",
+                "duration": "5 min"
+            },
+            {
+                "id": "how-it-works-video",
+                "name": "How Cross-Chain Storage Works",
+                "type": "video",
+                "description": "6-minute technical walkthrough showing how data moves from Layer 2s to Filecoin storage and how backends manage the cross-chain flow",
+                "url": "https://youtu.be/5JZiTEoY6Ow",
+                "duration": "6 min"
+            },
+            {
                 "id": "backend-storage",
                 "name": "Setting Up Backend Storage",
                 "type": "walkthrough",
@@ -238,6 +278,14 @@
                     "Web Server Integration Patterns",
                     "Production Secret Management"
                 ]
+            },
+            {
+                "id": "multi-chain-patterns-video",
+                "name": "Multi-Chain App Patterns",
+                "type": "video",
+                "description": "4-minute overview of practical multi-chain application patterns using shared Filecoin storage across Base, Arbitrum, and Polygon",
+                "url": "https://youtu.be/T0CNYvtwx30",
+                "duration": "4 min"
             },
             {
                 "id": "payment-tracking",
@@ -296,6 +344,22 @@
         "name": "Payment Architecture Patterns",
         "description": "Master the three payment models for Filecoin applications: User-Pays for maximum decentralization, dApp-Pays for frictionless onboarding, and Hybrid for sustainable growth",
         "resources": [
+            {
+                "id": "payment-patterns-video",
+                "name": "Payment Architecture Patterns",
+                "type": "video",
+                "description": "5-minute overview of different payment architecture patterns in Filecoin applications, covering who pays for storage and retrieval in each model",
+                "url": "https://youtu.be/DjEi-Vt81pw",
+                "duration": "5 min"
+            },
+            {
+                "id": "operators-allowances-video",
+                "name": "Operators & Allowances Deep Dive",
+                "type": "video",
+                "description": "5-minute technical deep dive into how operators and allowances work in Filecoin Pay, explaining the core mechanics used across all payment models",
+                "url": "https://youtu.be/ckwov7ywkCw",
+                "duration": "5 min"
+            },
             {
                 "id": "user-pays",
                 "name": "Implementing User-Pays Architecture",
@@ -357,6 +421,14 @@
                     "Treasury Budget Allocation",
                     "Graceful Degradation Patterns"
                 ]
+            },
+            {
+                "id": "advanced-payment-rails-video",
+                "name": "Advanced Payment Rails",
+                "type": "video",
+                "description": "4-minute exploration of advanced payment rail patterns, including multiple payment rails, conditional payments, and sophisticated payment strategies",
+                "url": "https://youtu.be/pWqrKUZluP4",
+                "duration": "4 min"
             }
         ],
         "assignment": {
