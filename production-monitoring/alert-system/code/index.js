@@ -1,29 +1,32 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
+import { ethers } from 'ethers';
 import nodemailer from 'nodemailer';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-// Alert thresholds
+// Configurable thresholds
 const LOW_BALANCE_THRESHOLD = parseFloat(process.env.LOW_BALANCE_THRESHOLD || "1.0");
 const CRITICAL_BALANCE_THRESHOLD = parseFloat(process.env.CRITICAL_BALANCE_THRESHOLD || "0.1");
 
-// Alert history to prevent duplicate notifications
+// Alert deduplication
 const alertHistory = new Map();
 
 /**
- * Alert System for Production Monitoring
+ * Alert System for Filecoin Storage
  * 
  * This module demonstrates how to:
- * 1. Monitor for alert conditions
- * 2. Send webhook notifications
- * 3. Send email alerts
- * 4. Track provider SLA
- * 5. Implement alert deduplication
+ * 1. Configure alert channels (console, webhook, email)
+ * 2. Define alert rules with conditions and severity
+ * 3. Evaluate rules against live blockchain data
+ * 4. Send webhook notifications
+ * 5. Set up email alerts (optional)
+ * 6. Monitor SLA compliance
+ * 7. Implement alert deduplication
  * 
- * Building block for: Alert system in Storage Operations Dashboard
+ * Building block for: Alert panel in Storage Operations Dashboard
  */
 async function main() {
     console.log("Alert System Demo\n");
@@ -36,10 +39,10 @@ async function main() {
 
     const synapse = await Synapse.create({
         privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
     });
 
-    console.log("Connected to Calibration testnet.\n");
+    console.log("✓ SDK initialized\n");
 
     // ========================================================================
     // Step 2: Configure Alert Channels
@@ -65,9 +68,13 @@ async function main() {
     };
 
     console.log("Configured Alert Channels:");
-    console.log(`  ✓ Console: Always enabled`);
-    console.log(`  ${alertChannels.webhook.enabled ? '✓' : '✗'} Webhook: ${alertChannels.webhook.enabled ? 'Configured' : 'Not configured'}`);
-    console.log(`  ${alertChannels.email.enabled ? '✓' : '✗'} Email: ${alertChannels.email.enabled ? 'Configured' : 'Not configured'}\n`);
+    console.log(`  ${alertChannels.console.enabled ? '✓' : '✗'} Console: Always enabled`);
+    console.log(`  ${alertChannels.webhook.enabled ? '✓' : '✗'} Webhook: ${alertChannels.webhook.enabled ? 'Configured' : 'Not configured (set WEBHOOK_URL)'}`);
+    console.log(`  ${alertChannels.email.enabled ? '✓' : '✗'} Email: ${alertChannels.email.enabled ? 'Configured' : 'Not configured (set SMTP_HOST, SMTP_USER)'}\n`);
+
+    console.log(`Alert Thresholds:`);
+    console.log(`  Low Balance:      < ${LOW_BALANCE_THRESHOLD} USDFC (warning)`);
+    console.log(`  Critical Balance: < ${CRITICAL_BALANCE_THRESHOLD} USDFC (critical)\n`);
 
     // ========================================================================
     // Step 3: Define Alert Rules
@@ -80,72 +87,90 @@ async function main() {
             name: 'Low Balance Warning',
             severity: 'warning',
             condition: async (ctx) => {
-                const balance = Number(ctx.balance) / 1e18;
-                return balance < LOW_BALANCE_THRESHOLD && balance >= CRITICAL_BALANCE_THRESHOLD;
+                const bal = Number(ctx.paymentBalance) / 1e18;
+                return bal < LOW_BALANCE_THRESHOLD && bal >= CRITICAL_BALANCE_THRESHOLD;
             },
-            message: (ctx) => `Balance is low: ${(Number(ctx.balance) / 1e18).toFixed(4)} USDFC`
+            message: (ctx) => `Balance is low: ${ethers.formatUnits(ctx.paymentBalance, 18)} USDFC (threshold: ${LOW_BALANCE_THRESHOLD})`
         },
         {
             id: 'critical_balance',
             name: 'Critical Balance Alert',
             severity: 'critical',
             condition: async (ctx) => {
-                const balance = Number(ctx.balance) / 1e18;
-                return balance < CRITICAL_BALANCE_THRESHOLD;
+                const bal = Number(ctx.paymentBalance) / 1e18;
+                return bal < CRITICAL_BALANCE_THRESHOLD;
             },
-            message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${(Number(ctx.balance) / 1e18).toFixed(4)} USDFC`
+            message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${ethers.formatUnits(ctx.paymentBalance, 18)} USDFC`
         },
         {
             id: 'operator_not_approved',
             name: 'Operator Not Approved',
             severity: 'error',
             condition: async (ctx) => {
-                const approval = await ctx.synapse.payments.serviceApproval(
-                    ctx.synapse.getWarmStorageAddress(),
-                    TOKENS.USDFC
-                );
-                return !approval.isApproved;
+                const operatorAddress = ctx.synapse.getWarmStorageAddress();
+                const approval = await ctx.synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+                return !approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n;
             },
             message: () => 'Storage operator is not approved. Storage operations will fail.'
+        },
+        {
+            id: 'low_days_remaining',
+            name: 'Storage Duration Warning',
+            severity: 'warning',
+            condition: async (ctx) => {
+                const accountInfo = await ctx.synapse.payments.accountInfo(TOKENS.USDFC);
+                if (accountInfo.lockupRate === 0n) return false;
+                const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
+                const daysRemaining = Number(epochsRemaining) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
+                return daysRemaining < 14 && daysRemaining > 0;
+            },
+            message: async (ctx) => {
+                const accountInfo = await ctx.synapse.payments.accountInfo(TOKENS.USDFC);
+                if (accountInfo.lockupRate === 0n) return 'No active deals';
+                const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
+                const daysRemaining = Number(epochsRemaining) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
+                return `Storage duration warning: ~${daysRemaining.toFixed(1)} days remaining at current rate`;
+            }
         }
     ];
 
-    console.log("Active Alert Rules:");
+    console.log("Registered Alert Rules:");
     for (const rule of alertRules) {
-        const severityIcon = rule.severity === 'critical' ? '🔴' :
-            rule.severity === 'error' ? '🟠' : '🟡';
-        console.log(`  ${severityIcon} ${rule.name} (${rule.severity})`);
+        console.log(`  • [${rule.severity.toUpperCase().padEnd(8)}] ${rule.name}`);
     }
-    console.log(`\nThresholds:`);
-    console.log(`  Low balance: < ${LOW_BALANCE_THRESHOLD} USDFC`);
-    console.log(`  Critical: < ${CRITICAL_BALANCE_THRESHOLD} USDFC\n`);
+    console.log();
 
     // ========================================================================
-    // Step 4: Check Alert Conditions
+    // Step 4: Evaluate Alert Conditions
     // ========================================================================
     console.log("=== Step 4: Checking Alert Conditions ===\n");
 
-    const balance = await synapse.payments.balance(TOKENS.USDFC);
-    const context = { synapse, balance };
+    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    console.log(`Current payment balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC\n`);
 
-    console.log(`Current balance: ${(Number(balance) / 1e18).toFixed(4)} USDFC\n`);
+    const context = { synapse, paymentBalance };
 
     const triggeredAlerts = [];
 
     for (const rule of alertRules) {
         try {
             const triggered = await rule.condition(context);
+            let message;
+            if (typeof rule.message === 'function') {
+                const result = rule.message(context);
+                message = result instanceof Promise ? await result : result;
+            }
+
             if (triggered) {
-                const alert = {
+                triggeredAlerts.push({
                     id: rule.id,
                     name: rule.name,
                     severity: rule.severity,
-                    message: rule.message(context),
+                    message: message,
                     timestamp: new Date().toISOString()
-                };
-                triggeredAlerts.push(alert);
-                console.log(`⚠️  ALERT: ${rule.name}`);
-                console.log(`   ${alert.message}\n`);
+                });
+                console.log(`⚠️  ${rule.name}: TRIGGERED`);
+                console.log(`   → ${message}`);
             } else {
                 console.log(`✓  ${rule.name}: OK`);
             }
@@ -154,7 +179,7 @@ async function main() {
         }
     }
 
-    console.log("");
+    console.log(`\nTotal alerts triggered: ${triggeredAlerts.length}\n`);
 
     // ========================================================================
     // Step 5: Send Webhook Notifications
@@ -162,11 +187,9 @@ async function main() {
     console.log("=== Step 5: Webhook Notifications ===\n");
 
     if (alertChannels.webhook.enabled && triggeredAlerts.length > 0) {
-        console.log(`Sending ${triggeredAlerts.length} alert(s) to webhook...\n`);
-
         for (const alert of triggeredAlerts) {
             if (!shouldSendAlert(alert.id)) {
-                console.log(`  ⏭️  ${alert.name}: Skipped (recently sent)\n`);
+                console.log(`  ⏭️  Skipped (cooldown): ${alert.name}`);
                 continue;
             }
 
@@ -176,56 +199,58 @@ async function main() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         source: 'filecoin-monitor',
-                        alert: alert,
+                        alert: {
+                            name: alert.name,
+                            severity: alert.severity,
+                            message: alert.message,
+                            timestamp: alert.timestamp
+                        },
                         metadata: {
-                            network: 'calibration',
-                            chainId: 314159
+                            network: 'calibration'
                         }
                     })
                 });
 
                 if (response.ok) {
-                    console.log(`  ✓ ${alert.name}: Webhook sent successfully`);
                     markAlertSent(alert.id);
+                    console.log(`  ✓ Webhook sent: ${alert.name}`);
                 } else {
-                    console.log(`  ✗ ${alert.name}: Webhook failed (${response.status})`);
+                    console.log(`  ✗ Webhook failed (${response.status}): ${alert.name}`);
                 }
             } catch (error) {
-                console.log(`  ✗ ${alert.name}: Webhook error (${error.message})`);
+                console.log(`  ✗ Webhook error: ${error.message}`);
             }
         }
-    } else if (!alertChannels.webhook.enabled) {
-        console.log("Webhook not configured. To enable:");
-        console.log("  1. Go to https://webhook.site");
-        console.log("  2. Copy your unique URL");
-        console.log("  3. Set WEBHOOK_URL in .env.local\n");
+    } else if (triggeredAlerts.length > 0) {
+        console.log("Webhook not configured. Set WEBHOOK_URL in .env.local to enable.");
+        console.log("Get a test URL at: https://webhook.site\n");
     } else {
         console.log("No alerts triggered. Webhook notifications not needed.\n");
     }
 
     // ========================================================================
-    // Step 6: Email Notifications
+    // Step 6: Email Notifications (Critical Only)
     // ========================================================================
     console.log("=== Step 6: Email Notifications ===\n");
 
-    if (alertChannels.email.enabled && triggeredAlerts.length > 0) {
-        console.log("Setting up email transport...\n");
+    const criticalAlerts = triggeredAlerts.filter(a => a.severity === 'critical');
 
-        const transporter = nodemailer.createTransport({
-            host: alertChannels.email.host,
-            port: alertChannels.email.port,
-            secure: false,
-            auth: {
-                user: alertChannels.email.user,
-                pass: alertChannels.email.pass
-            }
-        });
+    if (alertChannels.email.enabled && criticalAlerts.length > 0) {
+        try {
+            const transporter = nodemailer.createTransport({
+                host: alertChannels.email.host,
+                port: alertChannels.email.port,
+                secure: false,
+                auth: {
+                    user: alertChannels.email.user,
+                    pass: alertChannels.email.pass
+                }
+            });
 
-        for (const alert of triggeredAlerts.filter(a => a.severity === 'critical')) {
-            try {
-                await transporter.sendMail({
+            for (const alert of criticalAlerts) {
+                const info = await transporter.sendMail({
                     from: '"Filecoin Monitor" <monitor@filecoin.local>',
-                    to: alertChannels.email.recipient,
+                    to: alertChannels.email.recipient || alertChannels.email.user,
                     subject: `[${alert.severity.toUpperCase()}] ${alert.name}`,
                     text: alert.message,
                     html: `
@@ -236,18 +261,20 @@ async function main() {
                         <p><strong>Time:</strong> ${alert.timestamp}</p>
                     `
                 });
-                console.log(`  ✓ Email sent for: ${alert.name}`);
-            } catch (error) {
-                console.log(`  ✗ Email failed: ${error.message}`);
+
+                console.log(`  ✓ Email sent: ${alert.name}`);
+                if (info.messageId) {
+                    console.log(`    Message ID: ${info.messageId}`);
+                }
             }
+        } catch (error) {
+            console.log(`  ✗ Email failed: ${error.message}`);
         }
-    } else if (!alertChannels.email.enabled) {
-        console.log("Email not configured. To enable for testing:");
-        console.log("  1. Go to https://ethereal.email");
-        console.log("  2. Create a test account");
-        console.log("  3. Set SMTP_* variables in .env.local\n");
+    } else if (criticalAlerts.length > 0) {
+        console.log("Email not configured. Critical alerts would be sent via email in production.");
+        console.log("Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env.local to enable.\n");
     } else {
-        console.log("No critical alerts. Email notifications not sent.\n");
+        console.log("No critical alerts. Email notifications only fire for critical severity.\n");
     }
 
     // ========================================================================
@@ -255,6 +282,7 @@ async function main() {
     // ========================================================================
     console.log("=== Step 7: Provider SLA Monitoring ===\n");
 
+    // SLA targets (in production, these would come from your provider agreement)
     const slaMetrics = {
         uptimeTarget: 99.9,
         currentUptime: 99.7,
@@ -265,90 +293,77 @@ async function main() {
     };
 
     console.log("SLA Compliance Report:");
-    console.log("┌─────────────────────────────────────────────────────────────────┐");
-    console.log("│ Metric                │ Target    │ Current   │ Status         │");
-    console.log("├─────────────────────────────────────────────────────────────────┤");
+    console.log("┌──────────────────────────────────────────────────────────────────┐");
+    console.log("│ Metric                │ Target    │ Current   │ Status           │");
+    console.log("├──────────────────────────────────────────────────────────────────┤");
 
     const uptimeOk = slaMetrics.currentUptime >= slaMetrics.uptimeTarget;
     const proofOk = slaMetrics.proofSuccessRate >= slaMetrics.proofSuccessTarget;
 
-    console.log(`│ Uptime                │ ${String(slaMetrics.uptimeTarget + '%').padEnd(9)} │ ${String(slaMetrics.currentUptime + '%').padEnd(9)} │ ${uptimeOk ? '✓ Compliant' : '✗ BREACH'}    │`);
-    console.log(`│ Proof Success Rate    │ ${String(slaMetrics.proofSuccessTarget + '%').padEnd(9)} │ ${String(slaMetrics.proofSuccessRate + '%').padEnd(9)} │ ${proofOk ? '✓ Compliant' : '✗ BREACH'}    │`);
-    console.log(`│ Avg Response Time     │ ${slaMetrics.responseTimeTarget.padEnd(9)} │ ${slaMetrics.avgResponseTime.padEnd(9)} │ ✓ Compliant    │`);
-    console.log("└─────────────────────────────────────────────────────────────────┘\n");
+    console.log(`│ Uptime                │ ${String(slaMetrics.uptimeTarget + '%').padEnd(9)} │ ${String(slaMetrics.currentUptime + '%').padEnd(9)} │ ${uptimeOk ? '✓ Compliant  ' : '✗ BREACH     '} │`);
+    console.log(`│ Proof Success Rate    │ ${String(slaMetrics.proofSuccessTarget + '%').padEnd(9)} │ ${String(slaMetrics.proofSuccessRate + '%').padEnd(9)} │ ${proofOk ? '✓ Compliant  ' : '✗ BREACH     '} │`);
+    console.log(`│ Response Time         │ ${slaMetrics.responseTimeTarget.padEnd(9)} │ ${slaMetrics.avgResponseTime.padEnd(9)} │ ✓ Compliant   │`);
+
+    console.log("└──────────────────────────────────────────────────────────────────┘\n");
 
     if (!uptimeOk || !proofOk) {
         console.log("⚠️  SLA BREACH DETECTED - Notify operations team\n");
     } else {
-        console.log("✓ All SLA metrics within targets\n");
+        console.log("✓ All SLA targets met\n");
     }
 
-    // ========================================================================
-    // Step 8: Continuous Monitoring Pattern
-    // ========================================================================
-    console.log("=== Step 8: Continuous Monitoring Implementation ===\n");
+    console.log("Note: In production, these metrics would be calculated from actual");
+    console.log("on-chain proof events rather than demonstration values.\n");
 
-    console.log("Production monitoring loop pattern:");
-    console.log(`
-const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    // ========================================================================
+    // Step 8: Alert Deduplication Demo
+    // ========================================================================
+    console.log("=== Step 8: Alert Deduplication ===\n");
 
-async function monitoringLoop() {
-    while (true) {
-        try {
-            // Check all conditions
-            const alerts = await checkAlertConditions(synapse, alertRules);
-            
-            // Send notifications for new alerts
-            for (const alert of alerts) {
-                if (shouldSendAlert(alert.id)) {
-                    await sendWebhook(alert);
-                    if (alert.severity === 'critical') {
-                        await sendEmail(alert);
-                    }
-                    markAlertSent(alert.id);
-                }
-            }
-            
-            // Update dashboard
-            broadcastStatus({ alerts, timestamp: Date.now() });
-            
-        } catch (error) {
-            console.error('Monitor error:', error);
-        }
-        
-        await sleep(POLL_INTERVAL);
-    }
-}
-`);
+    console.log("Deduplication prevents alert fatigue (repeated identical alerts).");
+    console.log("Testing cooldown mechanism:\n");
+
+    // Simulate sending same alert twice
+    const testAlertId = "test_dedup";
+
+    const first = shouldSendAlert(testAlertId);
+    console.log(`  First check:  Should send? ${first}`);
+    if (first) markAlertSent(testAlertId);
+
+    const second = shouldSendAlert(testAlertId);
+    console.log(`  Second check: Should send? ${second} (blocked by 15-min cooldown)`);
+
+    console.log(`\n  Cooldown period: 15 minutes`);
+    console.log("  After cooldown expires, the same alert can fire again.\n");
 
     // ========================================================================
     // Summary
     // ========================================================================
-    console.log("\n=== Summary ===\n");
+    console.log("=== Summary ===\n");
 
     console.log("✅ Alert System Complete!\n");
 
     console.log("You learned:");
-    console.log("  • Configuring multiple alert channels (console, webhook, email)");
-    console.log("  • Defining alert rules with conditions and thresholds");
-    console.log("  • Sending real webhook notifications");
-    console.log("  • Email alerts via SMTP (nodemailer)");
-    console.log("  • Provider SLA monitoring");
-    console.log("  • Alert deduplication to prevent spam\n");
+    console.log("  • Configuring multi-channel alert delivery");
+    console.log("  • Defining rules with conditions and severity levels");
+    console.log("  • Evaluating conditions against live blockchain data");
+    console.log("  • Sending webhook notifications");
+    console.log("  • Email alerts for critical issues");
+    console.log("  • SLA compliance monitoring");
+    console.log("  • Alert deduplication to prevent notification spam\n");
 
     console.log("Dashboard Building Blocks:");
-    console.log("  ✓ Alert system for failures");
-    console.log("  ✓ Webhook integration pattern");
-    console.log("  ✓ SLA compliance monitoring\n");
+    console.log("  ✓ Alert panel with severity indicators");
+    console.log("  ✓ SLA compliance tracking widget");
+    console.log("  ✓ Multi-channel notification system");
+    console.log("  ✓ Webhook integration for Slack/Discord\n");
 
-    console.log("Production Monitoring Module Complete!");
-    console.log("\nExercise: Build a Storage Operations Dashboard combining:");
-    console.log("  • Real-time proof status (Walkthrough 1)");
-    console.log("  • Historical charts (Walkthrough 2)");
-    console.log("  • Alert notifications (Walkthrough 3)");
+    console.log("All three walkthroughs are complete! You now have all the building");
+    console.log("blocks needed to create a Storage Operations Dashboard.");
 }
 
-// Alert deduplication helpers
+// Deduplication helpers
+
 function shouldSendAlert(alertId, cooldownMs = 15 * 60 * 1000) {
     const lastSent = alertHistory.get(alertId);
     if (!lastSent) return true;

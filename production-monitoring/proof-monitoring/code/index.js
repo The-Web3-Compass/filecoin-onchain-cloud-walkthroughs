@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
+import { ethers } from 'ethers';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -9,10 +10,11 @@ dotenv.config();
  * Real-Time Proof Monitoring
  * 
  * This module demonstrates how to monitor:
- * 1. Provider information and status
+ * 1. Core contract addresses and network status
  * 2. Storage service parameters
- * 3. Payment account health
- * 4. Proving period concepts
+ * 3. Payment account health with days-remaining calculation
+ * 4. Operator approval status
+ * 5. Filecoin proving period concepts
  * 
  * Building block for: Storage Operations Dashboard
  */
@@ -21,7 +23,7 @@ async function main() {
     console.log("Monitor your Filecoin storage proofs and provider status.\n");
 
     // ========================================================================
-    // Step 1: Initialize SDK and Get Basic Info
+    // Step 1: Initialize SDK
     // ========================================================================
     console.log("=== Step 1: SDK Initialization ===\n");
 
@@ -30,26 +32,20 @@ async function main() {
         rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
     });
 
-    const chainId = synapse.getChainId();
-    console.log(`Connected to chain ID: ${chainId}`);
-    console.log(`Network: ${chainId === 314159 ? 'Calibration Testnet' : 'Unknown'}\n`);
+    console.log("✓ SDK initialized successfully");
+    console.log(`  Connected to: Filecoin Calibration Testnet\n`);
 
     // ========================================================================
-    // Step 2: Get Contract Addresses
+    // Step 2: Get Core Contract Addresses
     // ========================================================================
     console.log("=== Step 2: Core Contract Addresses ===\n");
 
-    const contracts = {
-        warmStorage: synapse.getWarmStorageAddress(),
-        payments: synapse.getPaymentsAddress(),
-        pdpVerifier: synapse.getPDPVerifierAddress()
-    };
+    const warmStorageAddress = synapse.getWarmStorageAddress();
 
     console.log("Key Infrastructure Contracts:");
-    console.log(`  Warm Storage:  ${contracts.warmStorage}`);
-    console.log(`  Payments:      ${contracts.payments}`);
-    console.log(`  PDP Verifier:  ${contracts.pdpVerifier}`);
-    console.log("\nThese contracts handle storage deals, payments, and proof verification.\n");
+    console.log(`  Warm Storage Operator: ${warmStorageAddress}`);
+    console.log("\nThis is the storage operator that manages uploads and proofs.");
+    console.log("You can look up this address on https://calibration.filfox.info/ to see activity.\n");
 
     // ========================================================================
     // Step 3: Storage Service Information
@@ -57,10 +53,13 @@ async function main() {
     console.log("=== Step 3: Storage Service Parameters ===\n");
 
     try {
-        const storageInfo = await synapse.getStorageInfo();
+        const storageInfo = await synapse.storage.getStorageInfo();
 
         console.log("Current Storage Service Configuration:");
-        console.log(`  Provider Address: ${storageInfo.providerAddress || 'Default'}`);
+
+        if (storageInfo.providerAddress) {
+            console.log(`  Provider Address: ${storageInfo.providerAddress}`);
+        }
 
         if (storageInfo.pricePerBytePerEpoch) {
             const pricePerGB = Number(storageInfo.pricePerBytePerEpoch) * 1024 * 1024 * 1024;
@@ -75,44 +74,47 @@ async function main() {
             console.log(`  Max Piece Size: ${formatBytes(Number(storageInfo.maxPieceSizeBytes))}`);
         }
 
-        console.log("\n");
+        console.log();
     } catch (error) {
-        console.log("Storage info not available via SDK, using defaults.");
+        console.log("Storage info retrieval note: Some fields may not be available on testnet.");
+        console.log("  Known constraints:");
         console.log("  Min Piece Size: 127 bytes");
         console.log("  Max Piece Size: 200 MiB\n");
     }
 
     // ========================================================================
-    // Step 4: Provider Information
+    // Step 4: Operator Approval Status
     // ========================================================================
-    console.log("=== Step 4: Provider Status ===\n");
-
-    const providerAddress = contracts.warmStorage;
+    console.log("=== Step 4: Operator Approval Status ===\n");
 
     try {
-        const providerInfo = await synapse.getProviderInfo(providerAddress);
+        const operatorAddress = warmStorageAddress;
+        const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
 
-        console.log("Provider Details:");
-        console.log(`  Address: ${providerAddress}`);
+        console.log("Storage Operator Approval:");
+        console.log(`  Operator: ${operatorAddress}`);
+        console.log(`  Approved: ${approval.isApproved ? '✓ Yes' : '✗ No'}`);
 
-        if (providerInfo.faultySectorCount !== undefined) {
-            console.log(`  Faulty Sectors: ${providerInfo.faultySectorCount}`);
+        if (approval.rateAllowance !== undefined) {
+            console.log(`  Rate Allowance: ${ethers.formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
         }
 
-        if (providerInfo.activeSectorCount !== undefined) {
-            console.log(`  Active Sectors: ${providerInfo.activeSectorCount}`);
+        if (approval.lockupAllowance !== undefined) {
+            console.log(`  Lockup Allowance: ${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`);
         }
 
-        // Calculate reliability score (for dashboard building block)
-        if (providerInfo.totalProofs !== undefined && providerInfo.successfulProofs !== undefined) {
-            const reliability = (providerInfo.successfulProofs / providerInfo.totalProofs * 100).toFixed(2);
-            console.log(`  Reliability Score: ${reliability}%`);
+        if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
+            console.log("\n  ⚠️  WARNING: Operator is not fully approved.");
+            console.log("  Storage operations will fail without proper approval.");
+            console.log("  Re-run the payment-management tutorial to fix this.");
+        } else {
+            console.log("\n  ✓ Operator is fully approved for storage operations.");
         }
 
-        console.log("\n");
+        console.log();
     } catch (error) {
-        console.log("Provider info query returned error (expected on testnet).");
-        console.log("In production, this provides sector and proof statistics.\n");
+        console.log("Approval check failed:", error.message);
+        console.log();
     }
 
     // ========================================================================
@@ -121,22 +123,43 @@ async function main() {
     console.log("=== Step 5: Payment Account Health ===\n");
 
     try {
-        const balance = await synapse.payments.balance(TOKENS.USDFC);
-        const accountInfo = await synapse.payments.accountInfo();
+        const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+        const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+        const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
 
         console.log("Account Status:");
-        console.log(`  Wallet Balance: ${(Number(balance) / 1e18).toFixed(4)} USDFC`);
+        console.log(`  Wallet Balance (USDFC):  ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+        console.log(`  Payment Account (USDFC): ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+        console.log();
 
-        if (accountInfo.paymentBalance !== undefined) {
-            console.log(`  Payment Account: ${(Number(accountInfo.paymentBalance) / 1e18).toFixed(4)} USDFC`);
+        console.log("Payment Account Details:");
+        console.log(`  Total Funds:     ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
+        console.log(`  Current Lockup:  ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
+        console.log(`  Lockup Rate:     ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
+        console.log(`  Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+        console.log(`  Last Settled:    Epoch ${accountInfo.lockupLastSettledAt}`);
+        console.log();
+
+        // Calculate days remaining
+        if (accountInfo.lockupRate > 0n) {
+            const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
+            const daysRemaining = Number(epochsRemaining) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
+
+            console.log(`  📊 Estimated Days Remaining: ~${daysRemaining.toFixed(1)} days`);
+
+            if (daysRemaining < 7) {
+                console.log("  🔴 CRITICAL: Less than 7 days of storage remaining!");
+            } else if (daysRemaining < 14) {
+                console.log("  🟡 WARNING: Less than 14 days remaining. Monitor closely.");
+            } else {
+                console.log("  🟢 Healthy: Sufficient balance for continued storage.");
+            }
+        } else {
+            console.log("  → No active storage deals (lockup rate is 0)");
         }
 
-        if (accountInfo.lockedFunds !== undefined) {
-            console.log(`  Locked Funds: ${(Number(accountInfo.lockedFunds) / 1e18).toFixed(4)} USDFC`);
-        }
-
-        // Health indicator
-        const balanceNumber = Number(balance) / 1e18;
+        // Simple health indicator based on payment balance
+        const balanceNumber = Number(paymentBalance) / 1e18;
         let healthStatus = "🟢 Healthy";
         if (balanceNumber < 1) {
             healthStatus = "🟡 Low Balance";
@@ -145,11 +168,11 @@ async function main() {
             healthStatus = "🔴 Critical - Fund immediately";
         }
 
-        console.log(`  Health Status: ${healthStatus}`);
-        console.log("\n");
+        console.log(`\n  Overall Health: ${healthStatus}`);
+        console.log();
     } catch (error) {
         console.log("Account health check failed:", error.message);
-        console.log("\n");
+        console.log();
     }
 
     // ========================================================================
@@ -178,18 +201,20 @@ async function main() {
 
     console.log("Building status object for dashboard integration...\n");
 
+    const currentBalance = await synapse.payments.balance(TOKENS.USDFC).catch(() => 0n);
+
     const monitorStatus = {
         timestamp: new Date().toISOString(),
         network: {
-            chainId: chainId,
-            name: chainId === 314159 ? 'Calibration' : 'Unknown'
+            name: 'Calibration Testnet',
+            rpc: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
         },
-        contracts: contracts,
+        contracts: {
+            warmStorage: warmStorageAddress
+        },
         account: {
-            healthy: true,
-            balance: await synapse.payments.balance(TOKENS.USDFC).then(b =>
-                (Number(b) / 1e18).toFixed(4)
-            ).catch(() => "0.0000")
+            healthy: Number(currentBalance) / 1e18 > 0.1,
+            paymentBalance: (Number(currentBalance) / 1e18).toFixed(4)
         },
         proofSchedule: {
             windowPoStPeriod: "24 hours",
@@ -211,17 +236,22 @@ async function main() {
     console.log(`
 async function monitorLoop(intervalMs = 60000) {
     while (true) {
-        const status = await getMonitorStatus(synapse);
+        const balance = await synapse.payments.balance(TOKENS.USDFC);
+        const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
         
         // Check for alerts
-        if (status.account.balance < 0.5) {
+        if (Number(balance) / 1e18 < 0.5) {
             await sendAlert('Low balance warning');
         }
         
-        // Emit to dashboard
-        broadcastStatus(status);
+        // Calculate days remaining
+        if (accountInfo.lockupRate > 0n) {
+            const epochsLeft = accountInfo.availableFunds / accountInfo.lockupRate;
+            const daysLeft = Number(epochsLeft) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
+            if (daysLeft < 7) await sendAlert('Critical: < 7 days remaining');
+        }
         
-        await sleep(intervalMs);
+        await new Promise(r => setTimeout(r, intervalMs));
     }
 }
 `);
@@ -229,8 +259,7 @@ async function monitorLoop(intervalMs = 60000) {
     console.log("Recommended polling intervals:");
     console.log("  • Balance checks: Every 5 minutes");
     console.log("  • Provider status: Every 15 minutes");
-    console.log("  • Proof monitoring: Every 30 minutes (match deadline window)");
-    console.log("\n");
+    console.log("  • Proof monitoring: Every 30 minutes (match deadline window)\n");
 
     // ========================================================================
     // Summary
@@ -242,13 +271,16 @@ async function monitorLoop(intervalMs = 60000) {
     console.log("You learned:");
     console.log("  • How to query contract addresses");
     console.log("  • How to check storage service parameters");
+    console.log("  • How to verify operator approval status");
     console.log("  • How to monitor payment account health");
+    console.log("  • How to calculate days of storage remaining");
     console.log("  • Understanding proving periods and deadlines");
     console.log("  • Building status objects for dashboards\n");
 
     console.log("Dashboard Building Blocks:");
-    console.log("  ✓ Real-time proof status queries");
-    console.log("  ✓ Account health monitoring");
+    console.log("  ✓ Real-time account health monitoring");
+    console.log("  ✓ Days-remaining calculation");
+    console.log("  ✓ Operator approval verification");
     console.log("  ✓ Polling patterns for live updates\n");
 
     console.log("Next: Historical Analysis with Subgraph (walkthrough 2)");

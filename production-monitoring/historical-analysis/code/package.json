@@ -8,8 +8,8 @@
         "start": "node index.js"
     },
     "dependencies": {
-        "@filoz/synapse-sdk": "^0.1.0",
+        "@filoz/synapse-sdk": "^0.36.1",
         "dotenv": "^16.3.1",
-        "graphql-request": "^6.1.0"
+        "ethers": "^6.9.0"
     }
 }
