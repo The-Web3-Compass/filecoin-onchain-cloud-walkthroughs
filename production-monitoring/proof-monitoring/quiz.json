@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What makes Filecoin different from traditional cloud storage providers?",
+            "options": [
+                "Lower storage costs",
+                "Cryptographic proofs instead of trust-based guarantees",
+                "Faster upload speeds",
+                "Unlimited storage capacity"
+            ],
+            "answerHash": "dc9397b630e0efec6be33a732106ab6841906d064e15b59906ccf8207ae64b91"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What is Proof of Data Possession (PDP) used for?",
+            "options": [
+                "Block production",
+                "Demonstrating the provider can access warm storage data at any time",
+                "Payment settlement",
+                "Network consensus"
+            ],
+            "answerHash": "e1cdb208df57dac6470ebf8e103318b82332dd6f2c9d1116494943f15ac408cc"
+        },
+        {
+            "id": 3,
+            "type": "true-false",
+            "question": "WindowPoSt proofs must be submitted every 24 hours for stored sectors.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "One Filecoin epoch equals _____ seconds.",
+            "answerHash": "624b60c58c9d8bfb6ff1886c2fd605d2adeb6ea4da576068201b6c6958ce93f4"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What does the getChainId() method help prevent?",
+            "options": [
+                "Network congestion",
+                "Accidentally querying the wrong network (testnet vs mainnet)",
+                "Payment failures",
+                "Proof submission errors"
+            ],
+            "answerHash": "47ee2bd98e944ffaa6c47ca852c1c93e4c600ba775cc0db3a18080a2095238cd"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "A provider with faulty sectors should always be immediately replaced.",
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What is the recommended polling interval for balance checks in production?",
+            "options": [
+                "Every second",
+                "Every 5 minutes",
+                "Every hour",
+                "Once per day"
+            ],
+            "answerHash": "2883cf5565d4f6e323df44d1bbf9b9b732538850f6fddfb9a51831e7e3aeddca"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What happens when your USDFC balance drops to zero?",
+            "options": [
+                "Storage automatically renews",
+                "The provider can no longer charge for storage and your data becomes at risk",
+                "Data is immediately deleted",
+                "Nothing, storage is free"
+            ],
+            "answerHash": "7e5c2dabb05971e097c81a8fb370441fa2ab2f1525a5661c579c25593d31df2c"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "WinningPoSt failures directly affect whether your data remains stored.",
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is the Calibration testnet chain ID?",
+            "options": [
+                "314",
+                "314159",
+                "1",
+                "31415"
+            ],
+            "answerHash": "c5b389beb081fe1e43ae92e895deca086b4eed5cf9efc7b78eebbbc9dc75c3f0"
+        }
+    ]
+}

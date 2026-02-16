@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "Why can't you efficiently query blockchain history directly?",
+            "options": [
+                "Blockchains don't store historical data",
+                "Blockchains are optimized for writing, not reading complex history",
+                "It's too expensive to query",
+                "Blockchain data is encrypted"
+            ],
+            "answerHash": "032bb732d5d2fbea8e22adb15a745c48cd09e1d11997681019cd634914be48e0"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What is the purpose of a Subgraph in Filecoin monitoring?",
+            "options": [
+                "To compress blockchain data",
+                "To index blockchain events into a queryable database",
+                "To encrypt storage deals",
+                "To validate proofs"
+            ],
+            "answerHash": "6efbafc40287a7448296e4fd6339ed9e2deb84bf803aba37abda1d4dd72df533"
+        },
+        {
+            "id": 3,
+            "type": "true-false",
+            "question": "A provider with a 94.5% proof success rate is considered excellent for commercial storage.",
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The SubgraphService provides _____ methods to query data instead of raw GraphQL.",
+            "answerHash": "2259e961582c9ae17235db655c751ddb198605c3bea788a4170a8baa3511c614"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What is the burn rate in cost analytics?",
+            "options": [
+                "The rate at which data is deleted",
+                "How fast you are spending funds on storage",
+                "The speed of proof submissions",
+                "Network transaction fees"
+            ],
+            "answerHash": "9e321c5327c23bd2fd6b07cc7450fa58389d87bfc35ed75dda52930f5cb54484"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Time-series data from historical analysis can be used to generate charts for dashboards.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does runway measure in cost analytics?",
+            "options": [
+                "Network latency",
+                "How long until your prepaid balance runs out",
+                "Provider uptime percentage",
+                "Data transfer speed"
+            ],
+            "answerHash": "b9fa2f02dc9c2386e483303ccabd7eda58fa0a49d2db2b1f2a79d4fb1feda594"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "Which platform is mentioned for deploying your own subgraph?",
+            "options": [
+                "AWS",
+                "Goldsky",
+                "Azure",
+                "Heroku"
+            ],
+            "answerHash": "f3f5eaae9faacfda6ea5ad7346f3cc0bbd2df4f0b735eb1afe4b49d3f3c8408f"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "A provider reliability score below 95% is considered a serious concern.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What blockchain events does a deployed subgraph extract?",
+            "options": [
+                "Only payment transactions",
+                "DataSetCreated, PieceAdded, and FaultReported events",
+                "Only proof submissions",
+                "Network consensus events"
+            ],
+            "answerHash": "ed46c0e524d2722ce8bd3547043d9faad06ec4fc36f924761b4d142ad63ce24b"
+        }
+    ]
+}

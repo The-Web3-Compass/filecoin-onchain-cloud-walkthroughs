@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main difference between a dashboard and an alert system?",
+            "options": [
+                "Dashboards are cheaper to implement",
+                "Alerts proactively notify you of problems before you check the dashboard",
+                "Dashboards provide more detailed information",
+                "Alerts only work during business hours"
+            ],
+            "answerHash": "769678b1990e13ae2e02afb84800879597c99d319bc58a6f413c65191a165893"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "Which severity level triggers email notifications in addition to webhook and console?",
+            "options": [
+                "warning",
+                "error",
+                "critical",
+                "all levels"
+            ],
+            "answerHash": "bfba7033571d606f3c2ff0415b3a26ddbfbf1f1884e5c391333a5470efbfe4a3"
+        },
+        {
+            "id": 3,
+            "type": "true-false",
+            "question": "Alert deduplication prevents the same alert from being sent repeatedly within a cooldown period.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The default cooldown period for alert deduplication is _____ minutes.",
+            "answerHash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What is alert fatigue?",
+            "options": [
+                "When monitoring systems consume too much CPU",
+                "When too many alerts cause operators to ignore all notifications",
+                "When email servers reject alert messages",
+                "When alerts arrive too slowly"
+            ],
+            "answerHash": "699a9d1b0354fee9b4cf1d027a832284d5f23c37ebd134eb1b27b1b0ffc53462"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Webhook notifications require SMTP credentials to function.",
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does SLA monitoring track?",
+            "options": [
+                "Storage costs over time",
+                "Provider compliance against performance targets",
+                "Network bandwidth usage",
+                "User login patterns"
+            ],
+            "answerHash": "8cabd8ea0ce01e10b8d687e559d54452af0a74b9b438ebe1eba3c19127e4a8b5"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "Which service can be used to test webhook notifications without a real production endpoint?",
+            "options": [
+                "ethereal.email",
+                "webhook.site",
+                "nodemailer",
+                "PM2"
+            ],
+            "answerHash": "9b1fe652fe524ef62230128396f5e6502e374e89c76eccbf5a58336f7759bbcc"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Alert rules should check conditions synchronously to prevent blocking other rules from executing.",
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is the purpose of heartbeat monitoring?",
+            "options": [
+                "To measure network latency",
+                "To monitor the monitoring system itself and detect if it crashes",
+                "To track provider proof submissions",
+                "To compress alert payloads"
+            ],
+            "answerHash": "8ffbeac5eee979664988916ee83bbacdcd98a5c3481f8a747409e098fb0dea06"
+        }
+    ]
+}
