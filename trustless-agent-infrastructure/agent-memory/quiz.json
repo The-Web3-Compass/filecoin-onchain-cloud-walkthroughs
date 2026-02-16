@@ -1,0 +1,64 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What feature of Filecoin storage makes agent memory \"tamper-evident\"?",
+            "options": [
+                "Encryption keys",
+                "Centralized database logs",
+                "Content-addressed PieceCIDs",
+                "Digital signatures"
+            ],
+            "answerHash": "bf8c45e1fcddd71f7fb6120fb69b33025efc07241477b804b7c929e131943843"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What is the recommended structure for grouping agent memory entries?",
+            "options": [
+                "Folder",
+                "Data Set",
+                "Bucket",
+                "Archive"
+            ],
+            "answerHash": "6b38637c0d2fc0329d585f91edae02abd4370343590015a163be414ac41aaaf9"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "Which field in the memory entry schema ensures unambiguous ordering?",
+            "options": [
+                "timestamp",
+                "sequence",
+                "type",
+                "hash"
+            ],
+            "answerHash": "bf37c7c208717d6de100ce851b48273f8d5d945c8dc64fc64372087ffcf88ba9"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "How does an auditor verify a specific memory entry?",
+            "options": [
+                "Ask the agent operator",
+                "Check the database logs",
+                "Download by PieceCID and compare bytes",
+                "Trust the timestamp"
+            ],
+            "answerHash": "7aa172d43a2e6d995be6627f750963153385d6425cec0da390150a623338a257"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What happens if a storage provider fails to submit a memory proof?",
+            "options": [
+                "Nothing happens",
+                "The data is re-uploaded automatically",
+                "Economic penalties (slashing)",
+                "The agent stops working"
+            ],
+            "answerHash": "0dda58bb6ee8771864b7646be9e0239e89387966660dff99337c714f166de382"
+        }
+    ]
+}

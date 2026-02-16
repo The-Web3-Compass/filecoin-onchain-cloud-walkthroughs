@@ -1,0 +1,64 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "Which token is used to pay for Filecoin storage deals?",
+            "options": [
+                "FIL",
+                "USDFC",
+                "tFIL",
+                "USDC"
+            ],
+            "answerHash": "601f7b3e14aad7728f0cd9293ff2bd60d66fd3ffb2f485ae1411d1eb4ec6f0fa"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "Which token is used to pay for blockchain gas fees?",
+            "options": [
+                "USDFC",
+                "FIL",
+                "ETH",
+                "MATIC"
+            ],
+            "answerHash": "9b73732fbe30f014764e7aecee3c820391c42a52b6d396949d23fa2235f72b13"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What must happen before USDFC in the wallet can be used for storage?",
+            "options": [
+                "Nothing, it is used directly",
+                "Convert to FIL",
+                "Deposit into payment account",
+                "Approve the registry contract"
+            ],
+            "answerHash": "a0bb24aec1536212faff7ccae1e761983426d0bba6349b25fa659c9de250fe1d"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "What three conditions must be met for a storage operator to charge the account?",
+            "options": [
+                "isApproved, rateAllowance, and lockupAllowance",
+                "isOwner, gasBalance, and paymentBalance",
+                "isVerified, isActive, and isFunded",
+                "None, operators can always charge"
+            ],
+            "answerHash": "9743944b1d35dfdf84dc223b4af59e2cbc3a6043bc3955aade7cdbcd7f8755c6"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "Which metric indicates how long the agent can continue operating without top-up?",
+            "options": [
+                "Wallet Balance",
+                "Total Funds",
+                "Days remaining",
+                "Epochs Elapsed"
+            ],
+            "answerHash": "d5b090546f00d7f7f93b1483b025c34565c075c2a7823a2b99dd189e317e0460"
+        }
+    ]
+}

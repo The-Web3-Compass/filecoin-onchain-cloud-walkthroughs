@@ -531,12 +531,29 @@
         "description": "Build autonomous agent infrastructure on Filecoin. Create verifiable agent identities using the ERC-8004 standard, build append-only memory systems with Data Sets, and implement autonomous payment management that keeps agents operational without human intervention.",
         "resources": [
             {
+                "id": "video-agent-storage-problem",
+                "name": "Agent Storage Problem & Solution",
+                "type": "video",
+                "description": "Understand the critical role of storage in autonomous agent infrastructure. Learn why agents need persistent, verifiable memory and identity to operate independently.",
+                "url": "https://youtu.be/QPHyCdz-GqY",
+                "duration": "4 min"
+            },
+            {
+                "id": "video-store-agent-cards",
+                "name": "Store Agent Cards with Proofs",
+                "type": "video",
+                "description": "Learn how to create and store agent identities on Filecoin using the ERC-8004 standard. Understand the importance of cryptographic proofs for establishing trustless agent identity.",
+                "url": "https://youtu.be/JzV3dc5kDmQ",
+                "duration": "5 min"
+            },
+            {
                 "id": "agent-card",
                 "name": "Create and Store an Agent Card",
                 "type": "walkthrough",
                 "description": "Build a verifiable agent identity on Filecoin. Construct an ERC-8004 Agent Card with capabilities and endpoints, upload it using the Synapse SDK, verify byte-for-byte integrity, simulate on-chain registration, and confirm proof requirements protect the stored identity.",
                 "walkthrough": "trustless-agent-infrastructure/agent-card/walkthrough/create-agent-card.md",
                 "code": "trustless-agent-infrastructure/agent-card/code/",
+                "quiz": "trustless-agent-infrastructure/agent-card/quiz.json",
                 "topics": [
                     "ERC-8004 Agent Identity Standard",
                     "Agent Card JSON Schema (ERC-721 Extended)",
@@ -551,12 +568,21 @@
                 ]
             },
             {
+                "id": "video-agent-memory",
+                "name": "Agent Memory & Data Sets",
+                "type": "video",
+                "description": "Discover how to build tamper-evident memory systems for agents using Filecoin Data Sets. Learn to construct append-only logs that provide a verifiable history of agent decisions.",
+                "url": "https://youtu.be/5o-UO0c4-js",
+                "duration": "4 min"
+            },
+            {
                 "id": "agent-memory",
                 "name": "Build Agent Memory System",
                 "type": "walkthrough",
                 "description": "Create an append-only, tamper-evident memory system for autonomous agents. Use Filecoin Data Sets to store structured decision logs, observations, and error records. Each entry receives its own PieceCID, forming an immutable audit trail that anyone can verify.",
                 "walkthrough": "trustless-agent-infrastructure/agent-memory/walkthrough/build-agent-memory.md",
                 "code": "trustless-agent-infrastructure/agent-memory/code/",
+                "quiz": "trustless-agent-infrastructure/agent-memory/quiz.json",
                 "topics": [
                     "Verifiable Memory Architecture",
                     "Filecoin Data Sets as Memory Banks",
@@ -577,6 +603,7 @@
                 "description": "Build autonomous payment management for Filecoin agents. Monitor gas balance, USDFC distribution, and payment account health. Implement conditional top-up logic, auto-fix operator approvals, track payment rails, and build a comprehensive health dashboard.",
                 "walkthrough": "trustless-agent-infrastructure/payment-setup/walkthrough/agent-payment-setup.md",
                 "code": "trustless-agent-infrastructure/payment-setup/code/",
+                "quiz": "trustless-agent-infrastructure/payment-setup/quiz.json",
                 "topics": [
                     "Three-Layer Financial Model (FIL Gas, Wallet USDFC, Payment Account)",
                     "Dual-Token Management (FIL and USDFC)",

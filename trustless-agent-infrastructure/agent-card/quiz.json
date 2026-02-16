@@ -1,0 +1,64 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "Which standard does the Agent Card metadata format follow?",
+            "options": [
+                "ERC-721",
+                "ERC-8004",
+                "ERC-20",
+                "ERC-1155"
+            ],
+            "answerHash": "db01359ae5cb584d129a48bd92d8f3a3f8c3fe6b2a1c44952a3a1c454b1c2764"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What unique identifier proves the integrity of the stored Agent Card on Filecoin?",
+            "options": [
+                "TokenID",
+                "Wallet Address",
+                "PieceCID",
+                "Transaction Hash"
+            ],
+            "answerHash": "e1363b18ecf3e697f2f54bc6afef78c21e14b239004df1fc389ae33d6a762523"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "Which SDK method is used to upload the Agent Card to Filecoin?",
+            "options": [
+                "synapse.storage.upload",
+                "ipfs.add",
+                "web3.storage.store",
+                "ethers.contract.upload"
+            ],
+            "answerHash": "62827a88383cfb3c316117e419b4a73b8c99d198ad5d9c896bfc9103129c508a"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "What URI scheme is used in the on-chain registry to point to the stored card?",
+            "options": [
+                "http://",
+                "ipfs://",
+                "piece://",
+                "filecoin://"
+            ],
+            "answerHash": "f08592b43728aab673d71e228238755389ca5b4080e42b26fbb3cd431408c9d5"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "Why is Filecoin preferred over standard IPFS pinning for agent identity?",
+            "options": [
+                "Faster retrieval speeds",
+                "Lower cost than IPFS",
+                "Cryptographic Proof of Data Possession",
+                "It supports larger files"
+            ],
+            "answerHash": "51e926523ea0bfb51408b3ecd0917096ea668f24c23e133d442d7322bad95c45"
+        }
+    ]
+}
