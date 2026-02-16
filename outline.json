@@ -373,5 +373,85 @@
                 "Payment Rail Health Monitoring"
             ]
         }
+    },
+    "production-monitoring": {
+        "name": "Production Monitoring and Observability",
+        "description": "Build production-grade monitoring systems for Filecoin storage infrastructure. Learn to track proof submissions, analyze historical data with subgraphs, and create automated alert systems to prevent downtime",
+        "resources": [
+            {
+                "id": "proof-monitoring",
+                "name": "Real-Time Proof Monitoring",
+                "type": "walkthrough",
+                "description": "Monitor cryptographic proofs in real-time to ensure your data stays stored. You'll query smart contracts for provider status, check payment account health, understand WindowPoSt and PDP proof schedules, and build the JSON structures that power monitoring dashboards.",
+                "walkthrough": "production-monitoring/proof-monitoring/walkthrough/real-time-proof-monitoring.md",
+                "code": "production-monitoring/proof-monitoring/code/",
+                "quiz": "production-monitoring/proof-monitoring/quiz.json",
+                "topics": [
+                    "Cryptographic Proof Mechanisms (PDP, WindowPoSt, WinningPoSt)",
+                    "SDK Initialization and Network Verification",
+                    "Contract Discovery (Warm Storage, Payments, PDP Verifier)",
+                    "Storage Parameters and Pricing Queries",
+                    "Provider Status and Reliability Scoring",
+                    "Payment Account Health Monitoring",
+                    "Proving Period Schedules",
+                    "Building Dashboard Status Objects",
+                    "Continuous Monitoring Patterns"
+                ]
+            },
+            {
+                "id": "historical-analysis",
+                "name": "Historical Analysis with Subgraph",
+                "type": "walkthrough",
+                "description": "Query Filecoin's historical data using the Synapse SDK's SubgraphService. You'll analyze provider performance over time, generate time-series data for charts, calculate cost analytics like burn rate and runway, and deploy your own subgraph indexer on Goldsky.",
+                "walkthrough": "production-monitoring/historical-analysis/walkthrough/historical-analysis-subgraph.md",
+                "code": "production-monitoring/historical-analysis/code/",
+                "quiz": "production-monitoring/historical-analysis/quiz.json",
+                "topics": [
+                    "The Data Layer Problem (Why Subgraphs Matter)",
+                    "SubgraphService Integration",
+                    "Querying Data Sets with Typed Methods",
+                    "Provider Performance Analysis",
+                    "Fault Record Tracking",
+                    "Time-Series Data Generation for Charts",
+                    "Cost Analytics (Burn Rate and Runway)",
+                    "Deploying Subgraphs on Goldsky"
+                ]
+            },
+            {
+                "id": "alert-system",
+                "name": "Building an Alert System",
+                "type": "walkthrough",
+                "description": "Build a production alert system that notifies you before disasters happen. You'll define alert rules with severity levels, send real webhook notifications to Discord or Slack, configure email alerts, implement SLA monitoring, and prevent alert fatigue through deduplication.",
+                "walkthrough": "production-monitoring/alert-system/walkthrough/building-alert-system.md",
+                "code": "production-monitoring/alert-system/code/",
+                "quiz": "production-monitoring/alert-system/quiz.json",
+                "topics": [
+                    "Alert Configuration and Notification Channels",
+                    "Alert Rules and Severity Levels",
+                    "Condition Checking and Evaluation",
+                    "Webhook Integration (Discord, Slack, PagerDuty)",
+                    "Email Alerts with SMTP",
+                    "SLA Monitoring and Compliance Tracking",
+                    "Alert Deduplication and Cooldown Periods",
+                    "Continuous Monitoring Loops",
+                    "Heartbeat Monitoring"
+                ]
+            }
+        ],
+        "capstone": {
+            "id": "capstone-project",
+            "name": "Production Monitoring Capstone",
+            "description": "Build a comprehensive Storage Operations Dashboard combining real-time monitoring, historical analysis, and automated alerts. Include status panels showing contract addresses and network info, balance widgets with health indicators, provider reliability charts, cost analytics, proof submission timelines, active alerts with severity levels, and SLA compliance reports.",
+            "topics": [
+                "Real-Time Status Panel",
+                "Balance and Health Monitoring",
+                "Provider Reliability Charts",
+                "Cost Analytics Dashboard",
+                "Proof Submission Timeline",
+                "Active Alerts Panel",
+                "SLA Compliance Reporting",
+                "Webhook and Email Integration"
+            ]
+        }
     }
 }
