@@ -3,14 +3,14 @@
         {
             "id": 1,
             "type": "multiple-choice",
-            "question": "What is the main advantage of using datasets over individual pieces?",
+            "question": "What is the main advantage of using datasets over uploading individual pieces separately?",
             "options": [
-                "Faster uploads",
-                "Unified payment rails and metadata for related files",
-                "Cheaper storage",
+                "Faster upload speeds",
+                "Unified payment rails and shared metadata for related files",
+                "Cheaper storage costs",
                 "Automatic backups"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "e10441602a5b0785df00b87820eb49ecf918a0a7b0cc90c0a0e829a9ac97a9f5"
         },
         {
             "id": 2,
@@ -21,14 +21,14 @@
         {
             "id": 3,
             "type": "multiple-choice",
-            "question": "What is a storage context?",
+            "question": "What is a storage context (dataset) in Filecoin?",
             "options": [
                 "A type of wallet",
-                "A logical container that groups related files with metadata",
+                "A logical container that groups related files with shared metadata",
                 "A blockchain network",
                 "A file format"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "196333c2d2775c930e2c900fbc75a6e4801f09ce2969e27cb7db3c7db4b99f4a"
         },
         {
             "id": 4,
@@ -46,7 +46,7 @@
                 "Use dataset.add()",
                 "Use provider.store()"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "d6534f3c380a6be08329c88306460d2aa943f66d34bcdd427f6c99a58af122fa"
         },
         {
             "id": 6,
@@ -64,7 +64,7 @@
                 "Testing uploads",
                 "Temporary storage"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "50f75b50b24b518d06d8cfdc3caae645d493293fe100c70cbda607ec442a1317"
         },
         {
             "id": 8,
@@ -76,7 +76,7 @@
                 "Only file names",
                 "Provider addresses"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "acbdac026e0827e59848987cf07d560efa90ca0dfb39532436e30c238660b6ef"
         },
         {
             "id": 9,
@@ -87,14 +87,14 @@
         {
             "id": 10,
             "type": "multiple-choice",
-            "question": "What do storage providers submit to prove they're maintaining your data?",
+            "question": "What do storage providers submit to the blockchain to prove they're maintaining your data?",
             "options": [
                 "Payment receipts",
-                "Cryptographic proofs (PoRep and PoSt)",
-                "File checksums",
+                "Cryptographic proofs (Proof-of-Replication and Proof-of-Spacetime)",
+                "File checksums only",
                 "Transaction logs"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "30b098443fdf2a94c3c32ccc0d5daeaa6fe9a0ce004d7a81bbcdff3edd79db99"
         }
     ]
 }

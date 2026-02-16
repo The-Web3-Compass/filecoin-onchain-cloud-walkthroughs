@@ -3,26 +3,26 @@
         {
             "id": 1,
             "type": "multiple-choice",
-            "question": "What are the two tokens used in Filecoin Onchain Cloud?",
+            "question": "What are the two tokens used in Filecoin Onchain Cloud on Calibration testnet?",
             "options": [
                 "ETH and USDC",
                 "FIL and USDC",
                 "tFIL and USDFC",
                 "BTC and DAI"
             ],
-            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+            "answerHash": "5af0a52ce6b9acda9b15f08ffee5f69c7e622e51032b9cd55069303cfb0f4e69"
         },
         {
             "id": 2,
             "type": "multiple-choice",
-            "question": "What is tFIL used for in Filecoin Onchain Cloud?",
+            "question": "What is tFIL used for on Calibration testnet?",
             "options": [
                 "Paying for storage costs",
                 "Paying for gas fees on transactions",
                 "Staking for validators",
                 "Rewarding miners"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "b285da1af7e10285f2d8cb12ed9ef804f06d2a8abc601841bbe574b471a39bee"
         },
         {
             "id": 3,
@@ -34,7 +34,7 @@
                 "Network rewards",
                 "Validator deposits"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "502dfc194d42069033e30d9cd87ede9ca558500cf4e57bc80692a5abd335fd41"
         },
         {
             "id": 4,
@@ -45,26 +45,26 @@
         {
             "id": 5,
             "type": "multiple-choice",
-            "question": "What network should you use for development and testing?",
+            "question": "What Filecoin network should you use for development and testing?",
             "options": [
                 "Mainnet",
                 "Calibration testnet",
                 "Ethereum mainnet",
                 "Polygon"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "967c3ff23e0589ae9d46bef7ade54ad37961eeb36a474e6c86f22c69226930f2"
         },
         {
             "id": 6,
             "type": "multiple-choice",
-            "question": "Why does Filecoin use two separate tokens instead of one?",
+            "question": "Why does Filecoin use a dual-token system (gas token and storage token)?",
             "options": [
                 "To make it more complicated",
                 "To separate volatile gas costs from predictable storage costs",
                 "To increase transaction fees",
                 "To support multiple blockchains"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "a990da4932159487e0dfbf2b771baab7011cf02cb034dd09b2a33acf1ddd2940"
         },
         {
             "id": 7,
@@ -88,7 +88,7 @@
                 "Only a deposit is needed",
                 "Only an approval is needed"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "901ea81062be1bdaf3eddbdc622fa47575ca6e843f377e094f428289bc2c7f1a"
         },
         {
             "id": 10,
@@ -100,7 +100,7 @@
                 "To mine new blocks",
                 "To validate transactions"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "f094f21f509a3bb5a7d7f4d99bca974f6415e845c7f38b3e0debcbc9f299e9c7"
         }
     ]
 }

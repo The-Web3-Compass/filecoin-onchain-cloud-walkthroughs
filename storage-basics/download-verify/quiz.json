@@ -3,14 +3,14 @@
         {
             "id": 1,
             "type": "multiple-choice",
-            "question": "What do you need to download a file from Filecoin?",
+            "question": "What identifier do you need to download a file from Filecoin?",
             "options": [
                 "The provider's IP address",
                 "The PieceCID",
                 "The transaction hash",
-                "The file name"
+                "The original file name"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "28a1eb6fb63e9eb79bda25d065c85badc1baacb666721f72d01f155f2c955e95"
         },
         {
             "id": 2,
@@ -28,7 +28,7 @@
                 "Buffer",
                 "JSON"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "64350a7011f886fc5f23965acb08c1fed4a434b4ff74fde43ca693fa087e3bc4"
         },
         {
             "id": 4,
@@ -40,7 +40,7 @@
                 "Trust the provider",
                 "Check the timestamp"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "414eb07aded86083a195f1875638db7e44b604b1ac95b56a62f0e1acce5c9d67"
         },
         {
             "id": 5,
@@ -57,14 +57,14 @@
         {
             "id": 7,
             "type": "multiple-choice",
-            "question": "What is the main advantage of content-addressable storage?",
+            "question": "What is the main advantage of content-addressable storage over traditional cloud storage?",
             "options": [
                 "Faster downloads",
-                "Cheaper storage",
+                "Cheaper storage costs",
                 "Cryptographic verification without trust",
                 "Unlimited file sizes"
             ],
-            "answerHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+            "answerHash": "4001a1903ed80dd8957af0d1a0014f8f678597163a2a57d2e1889025c54f6090"
         },
         {
             "id": 8,
@@ -82,7 +82,7 @@
                 "The SDK fixes the corruption",
                 "Nothing, you won't notice"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "21bb7ccb78709b9768cae48b99858985f2743474e2206772824b358ad34e2c46"
         }
     ]
 }

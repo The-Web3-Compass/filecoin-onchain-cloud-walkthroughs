@@ -10,7 +10,7 @@
                 "Wallet is for storage; payment account is for gas",
                 "Wallet is on-chain; payment account is off-chain"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "a20ade987d21e090e8a4dcd3be592c92e67fd0064ccbe07346adc828215ec03b"
         },
         {
             "id": 2,
@@ -28,7 +28,7 @@
                 "Upload and download allowances",
                 "Storage and retrieval allowances"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "2b1f9de07dda07e374fdcc3810b1ab9498412bb9b64a615db8e52eb7182b5165"
         },
         {
             "id": 4,
@@ -39,14 +39,14 @@
         {
             "id": 5,
             "type": "multiple-choice",
-            "question": "Why is it safe to set unlimited allowances for operators?",
+            "question": "Why is it safe to set unlimited allowances for trusted operators?",
             "options": [
                 "Operators are trustworthy",
-                "On-chain enforcement prevents overcharging",
+                "On-chain smart contracts enforce actual usage-based charges",
                 "The SDK limits charges automatically",
                 "You can always revoke access"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "4883846f3aa9a97cedd71bd61840eaa474e3ab82fe3ccef01af909d62783e871"
         },
         {
             "id": 6,
@@ -60,11 +60,11 @@
             "question": "What does the Warm Storage operator do?",
             "options": [
                 "Manages cold storage backups",
-                "Handles file uploads and storage deals",
-                "Provides caching services",
-                "Validates transactions"
+                "Manages file uploads, storage deals, and frequently-accessed data",
+                "Provides caching services only",
+                "Validates blockchain transactions"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "c63ba513eeb7ab51fcf85e99b7164ca5d667f5e4d7fc231202ee1b841162a869"
         }
     ]
 }

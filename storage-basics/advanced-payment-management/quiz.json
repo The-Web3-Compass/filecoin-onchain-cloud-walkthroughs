@@ -3,14 +3,14 @@
         {
             "id": 1,
             "type": "multiple-choice",
-            "question": "What are the three layers in Filecoin's payment model?",
+            "question": "What are the three states of USDFC in Filecoin's payment architecture?",
             "options": [
                 "Wallet, storage, retrieval",
-                "Wallet, payment account, locked funds",
+                "Wallet balance, payment account balance, locked funds",
                 "Upload, download, verify",
                 "Gas, storage, rewards"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "7521a2b52123edae4de7123cb58cc4d0badf4672562e5c7b9996af56f811c7b7"
         },
         {
             "id": 2,
@@ -21,14 +21,14 @@
         {
             "id": 3,
             "type": "multiple-choice",
-            "question": "What is a payment rail?",
+            "question": "What is a payment rail in Filecoin?",
             "options": [
                 "A type of blockchain",
-                "An automated payment channel for ongoing storage",
+                "An automated payment channel between you and storage providers",
                 "A wallet address",
                 "A transaction fee"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "c82d47bd1941ca262ffcf45b2757fde9268237a66cadeb43c2e8e3a09a4eb329"
         },
         {
             "id": 4,
@@ -39,14 +39,14 @@
         {
             "id": 5,
             "type": "multiple-choice",
-            "question": "What does the account health check tell you?",
+            "question": "What information does the account health check (accountInfo) provide?",
             "options": [
                 "Your wallet balance only",
-                "Total funds, lockup, available funds, and days remaining",
-                "Transaction history",
-                "Provider status"
+                "Total funds, current lockup, available funds, and days remaining",
+                "Transaction history only",
+                "Provider status only"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "f969fda206525432ea83f95a102e303ac843ef0f65ad14cf9ddf1cb5d9d5e971"
         },
         {
             "id": 6,
@@ -64,19 +64,19 @@
                 "95%",
                 "90%"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "366173078195c0f32a81b943013e2e1c6dc207fd62ca6b7ddd73d5bd8164e40d"
         },
         {
             "id": 8,
             "type": "multiple-choice",
-            "question": "Why are funds locked in payment rails?",
+            "question": "Why are funds locked in payment accounts during active storage deals?",
             "options": [
                 "To prevent fraud",
-                "To protect providers from non-payment during active storage deals",
+                "To guarantee future payments to providers for the deal duration",
                 "To earn interest",
                 "To pay gas fees"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "dadb15f74c7c657566115305ffc25fa77a6f22dd61e5ba115d77833f9ff645ff"
         },
         {
             "id": 9,
@@ -94,7 +94,7 @@
                 "Daily email reports",
                 "Weekly balance checks"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "2c3306c1d1606ab90188b37a58a7f5900fac03f184b0da1ddae8fc4051562ca2"
         }
     ]
 }

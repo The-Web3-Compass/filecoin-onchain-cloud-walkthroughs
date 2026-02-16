@@ -3,14 +3,14 @@
         {
             "id": 1,
             "type": "multiple-choice",
-            "question": "What is a PieceCID?",
+            "question": "What is a PieceCID in Filecoin?",
             "options": [
                 "A random identifier assigned by the provider",
                 "A cryptographic identifier derived from file content",
                 "A transaction hash",
                 "A wallet address"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "9fd4aa077db8039e585f29411dd6ea63ce25b07ed244e7cb6ac0cf4e9a2eb66b"
         },
         {
             "id": 2,
@@ -21,26 +21,26 @@
         {
             "id": 3,
             "type": "multiple-choice",
-            "question": "What is the minimum file size for Filecoin uploads?",
+            "question": "What is the minimum file size for uploads using the Synapse SDK?",
             "options": [
                 "1 byte",
                 "127 bytes",
                 "1 KB",
                 "1 MB"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "9ac1fd88ae355543399ec68b48bf14776e91e942316dbe42c8358cc8b6cf70f4"
         },
         {
             "id": 4,
             "type": "multiple-choice",
-            "question": "What is the maximum file size for Filecoin uploads?",
+            "question": "What is the maximum file size for uploads using the Synapse SDK?",
             "options": [
                 "100 MB",
                 "200 MiB",
                 "1 GB",
                 "Unlimited"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "40f7e311deca5ccd5b63362999aff5cfdc64f87b8a764f9ae4a1dd02bd96bfeb"
         },
         {
             "id": 5,
@@ -72,11 +72,11 @@
             "question": "What happens during the data padding phase?",
             "options": [
                 "Files are compressed",
-                "Files are padded to power-of-2 sizes for Merkle tree construction",
+                "Files are padded to meet Filecoin sector alignment requirements",
                 "Files are encrypted",
                 "Files are split into chunks"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "3f56bc58f572afaa449a677dee7dc3650bc40b91ee2538f73bfdfa80d7cacc15"
         },
         {
             "id": 9,
@@ -88,7 +88,7 @@
                 "Call customer support",
                 "Check your wallet balance"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "0aab4b7ebbbe1dcb923c71b7427aac66e14a242e3af444035449e4bb5f526087"
         },
         {
             "id": 10,

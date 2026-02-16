@@ -10,13 +10,13 @@
                 "ERC-1155",
                 "Both ERC-721 and ERC-1155"
             ],
-            "answerHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"
+            "answerHash": "be106984ae9963a9c2f24c96a74e104f2f4b2f85c3f00d6aa1e36c59fd6f59f5"
         },
         {
             "id": 2,
             "type": "true-false",
             "question": "PieceCIDs expire after a certain period of time.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 3,
@@ -28,13 +28,13 @@
                 "tokenId, name, description",
                 "image, attributes, external_url"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "fa7b34621d60c9a043b12afa3deb467ce8b3b51589338cf8d8d75959354c2558"
         },
         {
             "id": 4,
             "type": "fill-in-the-blank",
             "question": "A _____ is a content-addressed identifier derived from your data's bytes.",
-            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+            "answerHash": "baab34c1405116ff4cdb039421984d70fd820d92ab431984dd7610ae92b51ddc"
         },
         {
             "id": 5,
@@ -46,13 +46,13 @@
                 "To compress the data",
                 "To encrypt the metadata"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "73e2599a4ad5b881c53afa23c13c9b2b00f8132e0f986ae2f474d969e432bcb1"
         },
         {
             "id": 6,
             "type": "true-false",
             "question": "The same NFT metadata API can serve NFTs on multiple chains simultaneously.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         },
         {
             "id": 7,
@@ -64,7 +64,7 @@
                 "The NFT image",
                 "The owner's address"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "a6bfecea553fed061089859ff6e94b9dd36a2201d4cbb50db376b464bdc93ec7"
         },
         {
             "id": 8,
@@ -76,13 +76,13 @@
                 "To encrypt the data",
                 "To reduce gas fees"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "e559abe82fdc2bca1d1bf88e2cc3693307e243787063578d18f0aa771e9d0038"
         },
         {
             "id": 9,
             "type": "true-false",
             "question": "You should store large NFT images directly in the metadata JSON.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 10,
@@ -94,7 +94,7 @@
                 "The smart contract code",
                 "A payment receipt"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "df0f0c195aa64aaf4de6295da16b0eaa389664c9df6e72422bd2b84539ebb6aa"
         }
     ]
 }

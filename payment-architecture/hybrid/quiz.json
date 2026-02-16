@@ -10,13 +10,13 @@
                 "To force all users to pay",
                 "To simplify the codebase"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "9f774c9cfc71d7d1d46e2b2f3ae7c02c41ed0aa2c515cac35858127d046b9821"
         },
         {
             "id": 2,
             "type": "true-false",
             "question": "In Hybrid architecture, free tier users never need to connect a wallet.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         },
         {
             "id": 3,
@@ -28,13 +28,13 @@
                 "How to compress the data",
                 "When to delete old files"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "6a84aa9fbfe14045e690f7027caa6f995a826c78e39989e850979bb1a19aeb9f"
         },
         {
             "id": 4,
             "type": "fill-in-the-blank",
             "question": "Hybrid architecture requires tracking user _____ to determine when they've exceeded free tier limits.",
-            "answerHash": "9f14025af0cf29c33f5bbbbb87d3a7b8f4b2f49a"
+            "answerHash": "0a4e4c29432ecb01b95f87d87ffaff9cb4f36ce4b89ff1a1a136ad1c7392ae07"
         },
         {
             "id": 5,
@@ -46,13 +46,13 @@
                 "Upload is blocked and user is prompted to upgrade",
                 "Data is compressed to fit"
             ],
-            "answerHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"
+            "answerHash": "c1fd6a6398ee2a352f235333f49c432aa0254cab8ed3a4c3cc0cc87dcd51b5c1"
         },
         {
             "id": 6,
             "type": "true-false",
             "question": "Pro tier users in Hybrid architecture always pay for their own storage.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         },
         {
             "id": 7,
@@ -64,7 +64,7 @@
                 "To reduce database size",
                 "To simplify the code"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "97ef3567d0ba3503b4fbe5d6c5ba966d7b2afbdca2dd657841295214f1d8697d"
         },
         {
             "id": 8,
@@ -76,13 +76,13 @@
                 "Delete user data to free funds",
                 "Automatically charge all users"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "dde1ea41d683f90ccc947f06b9bc9cd838eb2f0e9ded176262d2c0cad0dd211c"
         },
         {
             "id": 9,
             "type": "true-false",
             "question": "Hybrid architecture requires maintaining two SDK contexts: one for treasury and one for user wallet.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         },
         {
             "id": 10,
@@ -94,7 +94,7 @@
                 "Free tier should have no limits",
                 "Treasury should cover all costs forever"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "7218867a37f3d3df9ba4d13c75f9827b3ec7003e252a3677574a4e64cebcaead"
         }
     ]
 }

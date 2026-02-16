@@ -10,13 +10,13 @@
                 "Faster upload speeds",
                 "Automatic backups"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "3a2950066f9762b9ca96d86f2002e9b91e579f5a5bd42e1e35242d140c2baada"
         },
         {
             "id": 2,
             "type": "true-false",
             "question": "Users need Filecoin tokens to use a multi-chain storage application.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 3,
@@ -28,13 +28,13 @@
                 "Gas and storage",
                 "Locked and unlocked funds"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "3ad92006d99403f47e4e2225a9d4066548896103135c573854a1f6fa61ec624b"
         },
         {
             "id": 4,
             "type": "fill-in-the-blank",
             "question": "The backend wallet's private key should be stored in secure _____ management systems like AWS Secrets Manager.",
-            "answerHash": "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
+            "answerHash": "20e8cdb5b4093e18eb565f0a0c148e44da1f0b8c5447f27c47881675bfa86c10"
         },
         {
             "id": 5,
@@ -46,13 +46,13 @@
                 "Backend to download data",
                 "Frontend to connect to the API"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "8495de8ed1825d89b72f04cd8ade0c3d3a05c1a97b57dd074619c4c71002be73"
         },
         {
             "id": 6,
             "type": "true-false",
             "question": "The backend wallet should accept user payments directly.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 7,
@@ -64,7 +64,7 @@
                 "To check network connectivity",
                 "To validate PieceCIDs"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "4ab29f1cba9c1bcd8594aa7cafe9611ccdf063bb85dc996c4355973364ee4ed0"
         },
         {
             "id": 8,
@@ -76,13 +76,13 @@
                 "In the database",
                 "In the frontend"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "0a6cad3afc70fe0d9a47f545e0b741b151542fba751cfdf9a24a2c2013b7da38"
         },
         {
             "id": 9,
             "type": "true-false",
             "question": "All user data ends up in the same storage system regardless of which L2 chain they used to pay.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         }
     ]
 }

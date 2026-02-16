@@ -10,13 +10,13 @@
                 "To verify user identities",
                 "To compress uploaded files"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "9a41627ba021797eb2d17badf1caeb8c0377b0850eeed301074f1af308137bc5"
         },
         {
             "id": 2,
             "type": "true-false",
             "question": "The transaction hash uniqueness constraint prevents double-crediting the same payment.",
-            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
         },
         {
             "id": 3,
@@ -28,13 +28,13 @@
                 "Contracts, tokens, transactions",
                 "Wallets, balances, transfers"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "31c6240cfe0e5d4af36b9f9e740435670d8627e46a2aec6f77e89d35d8f474dc"
         },
         {
             "id": 4,
             "type": "fill-in-the-blank",
             "question": "Before every upload, you must check if the user has sufficient remaining _____.",
-            "answerHash": "9f14025af0cf29c33f5bbbbb87d3a7b8f4b2f49a"
+            "answerHash": "b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7"
         },
         {
             "id": 5,
@@ -46,13 +46,13 @@
                 "It saves database space",
                 "It's required by Filecoin"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "d063c94356a2432d8ce81ed58d1586b7367e0e858b91a8cfcd1b46a9fcc7adbc"
         },
         {
             "id": 6,
             "type": "true-false",
             "question": "Quota is deducted before the upload attempt to prevent abuse.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 7,
@@ -64,7 +64,7 @@
                 "Check email receipts",
                 "Use a third-party API only"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "c8b232ed73ffe7973f95022c7402ddd7d2803209e747cadea93eefa85bff677b"
         },
         {
             "id": 8,
@@ -76,13 +76,13 @@
                 "To encrypt data",
                 "To reduce storage costs"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "cc985876a8fb33411fd23b0cbbc1f33246d3cc6883d72458f98ea2754eb02cb8"
         },
         {
             "id": 9,
             "type": "true-false",
             "question": "SQLite is recommended for production deployments with high throughput.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 10,
@@ -94,7 +94,7 @@
                 "Every time they upload",
                 "Never, users should check themselves"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "0c96f4f903ecc832dec544a69960e518bc0bc2c9941cc431a4f45c531869b545"
         }
     ]
 }

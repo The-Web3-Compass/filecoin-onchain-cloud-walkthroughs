@@ -10,13 +10,13 @@
                 "Larger file size limits",
                 "Automatic backups"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "cc24a5c41aa2e5e0b34c4cae875515ba3e458ef6299d086b66391ab58b3ca663"
         },
         {
             "id": 2,
             "type": "true-false",
             "question": "Beam CDN changes how content is identified or verified compared to standard Filecoin storage.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 3,
@@ -28,7 +28,7 @@
                 "Set fastDelivery: true",
                 "Set cdn: 'beam'"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "7219b4c7b923b8b75bb38ada840e68ec3eb1e26f8b87cb0300b98b2f308956e6"
         },
         {
             "id": 4,
@@ -40,19 +40,19 @@
                 "Flat rate per file",
                 "Free with storage costs"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "5fe849a791157ed77cda237c63043ac8748c64a6dfb96e16ca2f3aaa9139a661"
         },
         {
             "id": 5,
             "type": "fill-in-the-blank",
             "question": "Beam providers operate at _____ locations worldwide to reduce latency.",
-            "answerHash": "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e"
+            "answerHash": "a1cb100f57e971cacf269e7c26e4630a25a8e9d4bdd35e32df1a80b66b896254"
         },
         {
             "id": 6,
             "type": "true-false",
             "question": "Beam CDN uploads are typically faster than standard uploads.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 7,
@@ -64,7 +64,7 @@
                 "You must manually choose a provider",
                 "All providers serve the content simultaneously"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "3b6790fa60ed233893ad146098bd323e3247bd239ccbbbd16a1d3be90229fd35"
         },
         {
             "id": 8,
@@ -76,13 +76,13 @@
                 "Frequently accessed content with global users",
                 "Small files under 1KB"
             ],
-            "answerHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+            "answerHash": "c90b12ba262a586901969cfa757fb0a3d373944cbd6397e9ef7e1e10345a6363"
         },
         {
             "id": 9,
             "type": "true-false",
             "question": "Beam providers can modify your data to optimize delivery speed.",
-            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+            "answerHash": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa"
         },
         {
             "id": 10,
@@ -94,7 +94,7 @@
                 "Client, Server, Database",
                 "Frontend, Backend, Blockchain"
             ],
-            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+            "answerHash": "4c912d59921b1d3921964f97b10dc04d00c5251d5124b57cb2180ca49176fb36"
         }
     ]
 }
