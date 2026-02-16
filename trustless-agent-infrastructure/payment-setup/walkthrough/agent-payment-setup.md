@@ -747,3 +747,7 @@ This completes the Trustless Agent Infrastructure module. Across three walkthrou
 **Finance (Walkthrough 3)**: The autonomous payment manager ensures the agent can fund its own operations. Balance monitoring, conditional deposits, approval management, and health dashboards keep the agent operational without human intervention.
 
 Together, these three capabilities transform a simple script into a trustless autonomous agent — one that can prove who it is, demonstrate what it has done, and sustain its own operations on the Filecoin network.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

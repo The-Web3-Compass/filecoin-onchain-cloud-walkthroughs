@@ -100,3 +100,7 @@ For more information, see:
 - [Filecoin Onchain Cloud Documentation](https://docs.filecoin.cloud/)
 - [Payment Operations Guide](https://docs.filecoin.cloud/developer-guides/payments/payment-operations/)
 - [Rails & Settlement](https://docs.filecoin.cloud/developer-guides/payments/rails-settlement/)
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

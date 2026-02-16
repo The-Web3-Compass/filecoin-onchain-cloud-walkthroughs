@@ -702,3 +702,7 @@ This model enables mainstream adoption by eliminating crypto friction, but it fu
 The code patterns demonstrated here - treasury management, traditional authentication, sponsored uploads, database mapping - form the foundation for consumer-friendly decentralized storage applications.
 
 The next walkthrough explores **Hybrid architecture** - combining User-Pays and dApp-Pays to create tiered systems where free users get sponsored storage while premium users pay directly for additional capacity.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

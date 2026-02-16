@@ -689,3 +689,7 @@ This memory system transforms agent logging from a trust-based exercise into a c
 The three entry types demonstrated — DECISION, OBSERVATION, and ERROR — cover the primary categories of agent behavior. Decisions prove why the agent acted. Observations prove what the agent saw. Errors prove how the agent handled failures. Together, they create a complete, tamper-evident record of agent operations.
 
 The next walkthrough completes the agent infrastructure by building autonomous payment management. Your agent has an identity (the Agent Card) and a memory (the Data Set). Now it needs the ability to fund itself — monitoring balances, depositing funds when they run low, and ensuring operator approvals remain active. Without autonomous payment management, the agent's storage operations stop when funds run out, effectively killing the agent.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

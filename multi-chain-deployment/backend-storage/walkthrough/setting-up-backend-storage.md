@@ -499,3 +499,7 @@ You have established a backend storage service that can support any multi-chain 
 This foundation enables the patterns in subsequent walkthroughs: tracking payments and managing quotas across chains, and storing NFT metadata with IPFS-compatible addressing.
 
 The backend wallet acts as a bridge between the diverse L2 ecosystem and Filecoin's storage network. Users never need to interact with Filecoin directly. They pay with familiar tokens on familiar chains. Your backend translates those payments into decentralized storage.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

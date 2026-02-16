@@ -208,3 +208,7 @@ This observability stack gives you the confidence to run decentralized infrastru
 
 **Where to next?**
 Now that you can see the performance, put it to the test. Check out the **[Streaming Large Files](../../streaming-large-files/walkthrough/streaming-large-files.md)** module to stress-test your new monitoring system with high-bandwidth video traffic.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

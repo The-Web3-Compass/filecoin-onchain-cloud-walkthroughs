@@ -156,3 +156,7 @@ You have successfully implemented the **Ingestion Layer** of our media stack. Yo
 -   **Prepared for Retrieval**: Enabled the `withCDN` flag, which instructs the network to keep this data "hot" on edge servers.
 
 But ingestion is only half the battle. A video sitting on a server is useless unless we can get it to a user. In **[Part 2](./02-streaming-server.md)**, we will build the machinery to get that data *out* just as efficiently as we put it *in*.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

@@ -708,3 +708,7 @@ Datasets represent a practical abstraction over Filecoin's piece-based storage m
 From here, you can explore advanced dataset operations like querying by metadata, adding files to existing datasets, implementing dataset versioning, or building application-specific organization schemes. The [Synapse SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) covers these topics in detail.
 
 The patterns you learned here - storage contexts, metadata tagging, multi-file uploads, and proof verification - apply directly to production applications on Filecoin mainnet. The only differences are network configuration and the use of real tokens instead of testnet tokens.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

@@ -336,3 +336,7 @@ If your balance shows as 0 or very small, you may need to re-fund your payment a
 You now have the foundation for real-time storage monitoring. The status object produced by this script contains everything needed to power the "Current Status" widget of a Storage Operations Dashboard: network connectivity, contract addresses for audit trails, provider health indicators, and payment account status.
 
 The next walkthrough builds on this by adding **historical analysis** — querying past proof submissions and transaction history to generate time-series charts and provider reliability scores over time. Where this walkthrough answers "what's happening now?", the next answers "what happened over the last week?"
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

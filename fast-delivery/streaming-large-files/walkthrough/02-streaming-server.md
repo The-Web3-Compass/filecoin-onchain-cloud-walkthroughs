@@ -141,3 +141,7 @@ Your server is now a high-performance media gateway. It understands how to:
 3.  Provide full seekability for large media assets.
 
 Now that the back-end is broadcasting, we need a front-end to receive it. In **[Part 3](./03-custom-video-player.md)**, we will build a custom interface to provide the ultimate viewing experience.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

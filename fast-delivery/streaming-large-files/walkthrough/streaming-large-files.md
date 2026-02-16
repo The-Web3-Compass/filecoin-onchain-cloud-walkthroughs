@@ -87,3 +87,7 @@ Open `http://localhost:3000`, paste your PieceCID, and click **Load Video**.
 The "Memory Wall" is the biggest hurdle for new developers handling media. Let's break through it.
 
 **[Continue to Part 1: Real Media Ingestion](./01-large-file-ingestion.md)**
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

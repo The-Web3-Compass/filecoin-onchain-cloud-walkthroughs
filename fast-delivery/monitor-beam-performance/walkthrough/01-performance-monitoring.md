@@ -261,3 +261,7 @@ You have successfully built the **Performance Layer** of your monitoring stack. 
 But speed is not the only metric that matters. Speed costs money.
 
 In **[Part 2: Costs, Egress, & Alerts](./02-costs-and-alerts.md)**, we will explore the **Economic Layer**. We will learn how to track your "Burn Rate" in real-time and build an automated "Circuit Breaker" to protect your wallet from runaway costs.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

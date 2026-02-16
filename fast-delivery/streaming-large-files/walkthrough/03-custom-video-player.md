@@ -155,3 +155,7 @@ Congratulations. You have moved from simple "Hello World" uploads to building a 
 3.  **Consumption**: A high-performance, native user interface designed for speed.
 
 You are no longer just storing bytes; you are broadcasting them. The next step is yours: take this foundation and build the next generation of decentralized YouTube, Vimeo, or Spotify. The infrastructure is ready.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

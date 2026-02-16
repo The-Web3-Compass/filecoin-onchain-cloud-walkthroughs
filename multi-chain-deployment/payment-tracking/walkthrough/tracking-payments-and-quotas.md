@@ -540,3 +540,7 @@ The key patterns:
 - Upload records update usage after success
 
 This system scales to support thousands of users across multiple chains while maintaining accurate accounting. The next walkthrough extends this foundation to NFT metadata storage.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

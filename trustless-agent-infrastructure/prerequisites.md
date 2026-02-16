@@ -99,3 +99,7 @@ Copy `.env.example` to `.env.local` and add your private key exported from MetaM
 | Payment Setup | Balance monitoring, autonomous deposits, operator approvals, health dashboards |
 
 These skills combine to build production-ready autonomous agents on Filecoin.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

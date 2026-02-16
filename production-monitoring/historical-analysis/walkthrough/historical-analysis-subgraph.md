@@ -171,3 +171,7 @@ You now have a complete historical analysis script using the **official Synapse 
 - **Plan**: Use payment metrics to forecast costs
 
 Next, let's put it all together in the final specific module: **Building an Alert System**.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

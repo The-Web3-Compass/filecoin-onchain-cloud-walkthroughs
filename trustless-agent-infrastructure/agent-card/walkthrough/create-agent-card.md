@@ -672,3 +672,7 @@ The PieceCID you received serves as the permanent, content-addressed identifier 
 This identity layer is the foundation for everything that follows. An agent without verifiable identity is just another anonymous API. An agent with a Filecoin-backed identity card has a provable, persistent, censorship-resistant profile that other agents and users can discover, verify, and trust.
 
 The next walkthrough builds on this foundation by creating a verifiable memory system. Your agent has an identity — now it needs the ability to record its decisions and actions in a way that creates an auditable, tamper-proof history. You will use Filecoin Data Sets to build an append-only memory store that proves not just what the agent is, but what it has done.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

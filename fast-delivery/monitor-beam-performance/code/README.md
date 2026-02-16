@@ -52,3 +52,7 @@ In a production environment, you would run the monitor script via a cron job:
 # Run monitoring every 15 minutes
 */15 * * * * cd /path/to/monitor-beam-performance/code && npm run monitor >> monitor.log 2>&1
 ```
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

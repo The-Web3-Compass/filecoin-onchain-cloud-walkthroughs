@@ -98,3 +98,7 @@ npm install && cp .env.example .env.local && npm start
 
 **"PieceCID not found on explorer"**
 → Explorers can take 10-60 minutes to index new deals. If your script showed "Upload successful" and download worked, the data is stored. The explorer will catch up.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

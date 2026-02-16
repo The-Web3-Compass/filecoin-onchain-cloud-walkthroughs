@@ -769,3 +769,7 @@ This model enables sustainable decentralized storage applications that behave li
 The patterns demonstrated here - dual context management, decision engines, quota tracking, tier transitions - form the foundation for production-ready storage applications.
 
 With the three payment architecture walkthroughs complete, you now understand the full spectrum of economic models available when building on Filecoin Onchain Cloud. Choose User-Pays for maximum decentralization, dApp-Pays for maximum convenience, or Hybrid for balanced sustainability.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

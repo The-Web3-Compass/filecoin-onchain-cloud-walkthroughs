@@ -473,3 +473,7 @@ The payment account system demonstrates thoughtful design that balances competin
 From here, you are ready to begin storing data using the Synapse SDK. The next walkthrough will cover uploading files, retrieving them, and understanding how storage deals work. The payment foundation you have built here will automatically handle the financial aspects while you focus on the storage operations themselves.
 
 For production deployments, revisit the sections on deposit strategy, allowance management, and security practices. These patterns scale from testnet experimentation to mainnet applications handling production data and real costs.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

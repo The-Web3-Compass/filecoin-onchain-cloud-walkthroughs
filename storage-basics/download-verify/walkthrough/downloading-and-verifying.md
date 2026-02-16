@@ -345,3 +345,7 @@ You've moved from "believing" your data is safe to "proving" it.
 
 With these basics mastered, funding accounts, managing allowances, uploading, and verifying downloads, you possess the foundational skills to build robust, unstoppable applications. Whether you're archiving public datasets, hosting dApp frontends, or securing personal backups, the principles remain the same: Content addressing over location addressing, and verification over trust.
 
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

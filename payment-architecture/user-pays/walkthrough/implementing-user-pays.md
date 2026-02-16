@@ -583,3 +583,7 @@ This model maximizes decentralization and user sovereignty at the cost of onboar
 The code patterns demonstrated here - checking balances, verifying approvals, executing operations, confirming payment rails - form the foundation for User-Pays applications. Whether you build a developer tool, an archival service, or a crypto-native application, these patterns ensure users understand what they're paying for and your application remains financially uninvolved.
 
 The next walkthrough explores the opposite end of the spectrum: dApp-Pays architecture, where your application manages a treasury and covers all storage costs for users, creating a Web2-like experience with no user-facing crypto requirements.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

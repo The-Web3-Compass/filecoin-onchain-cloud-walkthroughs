@@ -89,3 +89,7 @@ PRIVATE_KEY=your_private_key_here
 **"Missing PRIVATE_KEY"**
 - The `.env.local` file is missing or incorrectly named
 - Solution: Create `.env.local` with `PRIVATE_KEY=your_key`
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

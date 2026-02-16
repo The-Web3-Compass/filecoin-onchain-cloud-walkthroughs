@@ -578,3 +578,7 @@ The abstractions provided by the Synapse SDK make this workflow accessible throu
 The next walkthrough will cover retrieving your data using the PieceCID you received. From there, you can explore additional storage operations like managing datasets (collections of related pieces), handling larger files through chunking strategies, implementing metadata for application-specific organization, or optimizing costs through strategic provider selection. The [Synapse SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) covers these advanced topics in detail.
 
 The foundational knowledge from this tutorial series - payment accounts, operator allowances, PieceCID mechanics, and upload workflows - applies directly when building production applications on Filecoin mainnet. The only differences are network configurations and the use of real rather than test tokens.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

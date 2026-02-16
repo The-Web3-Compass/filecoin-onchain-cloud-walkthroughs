@@ -127,3 +127,7 @@ npm install && cp .env.example .env.local && npm start
 | Alert System | Webhooks, email, SLA monitoring, deduplication |
 
 These skills combine to build production-ready monitoring dashboards.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

@@ -259,3 +259,7 @@ This capability transforms "Budgeting" from a passive administrative task into a
 We have established visibility (Metrics) and control (Costs/Alerts). But we are still operating via CLI.
 
 In **[Part 3: Real-Time Visualization](./03-realtime-dashboard.md)**, we will aggregate all this data into a **"Mission Control" Dashboard**. We will also discuss how to scale this architecture from a single laptop to a global fleet of geometric probes.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

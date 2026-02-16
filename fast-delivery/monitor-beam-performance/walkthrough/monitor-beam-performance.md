@@ -83,3 +83,6 @@ The Quick Start got you up and running, but to truly own this infrastructure, yo
 In the following walkthroughs, we will deconstruct these scripts line-by-line. We will explain the "Why" behind the "How"—covering everything from the philosophy of streaming payments to the architecture of decentralized probing.
 
 **Continue to Part 1: Performance Monitoring**
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

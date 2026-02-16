@@ -385,3 +385,6 @@ You now have a funded payment account on Filecoin Calibration, ready for storage
 From here, you can begin uploading and retrieving data using the Synapse SDK's storage module. The [Synapse SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) covers storage operations in detail, and the [storage calculator](https://docs.filecoin.cloud/developer-guides/storage/storage-costs/#detailed-calculator-guide) can help you estimate costs for production deployments.
 
 The patterns you learned here, including payment accounts, operator allowances, and the dual token model, apply directly when you move to mainnet. The only differences are the network configuration and the use of real tokens.
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.

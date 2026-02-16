@@ -530,3 +530,7 @@ To see a JSON payload fly across the internet:
 Alert systems are the difference between proactive and reactive infrastructure management. By combining real-time queries, historical analysis, and automated notifications, you have built a monitoring pipeline that catches problems before they affect users.
 
 The three walkthroughs in this module — proof monitoring, historical analysis, and alert systems — represent the observability layer of production Filecoin applications. Every serious storage deployment needs these capabilities, whether monitoring a single application or managing storage infrastructure for thousands of users.
+
+## Community & Support
+
+Need help? Visit the [Filecoin Slack](https://filecoin.io/slack) to resolve any queries. Also, join the [Web3Compass Telegram group](https://t.me/+Bmec234RB3M3YTll) to ask the community.
