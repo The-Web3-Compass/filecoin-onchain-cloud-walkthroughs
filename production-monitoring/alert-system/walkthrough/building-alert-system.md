@@ -486,6 +486,45 @@ You have now completed all three walkthroughs. Combined, they provide every buil
 
 **Exercise**: Build a web application that combines these components into a single dashboard. Use Express.js for the backend API, serve the monitoring data from Walkthroughs 1-3, and build a frontend using your preferred framework (React, Vue, or even vanilla HTML/CSS). The data structures are already JSON-formatted and ready for API consumption.
 
+## Testing Your Alert System
+
+You don't need to wait for a disaster to verify your system works. You can force alerts by overriding thresholds or using test tools.
+
+### 1. Force a "Low Balance" Alert
+
+By default, the system warns when balance is < 1.0 USDFC. If you have 5.0 USDFC, it stays silent. To force a warning:
+
+1.  **Override the Threshold**: Run the script with a higher threshold environment variable:
+    ```bash
+    LOW_BALANCE_THRESHOLD=100 npm start
+    ```
+2.  **Verify Output**: You should see:
+    ```
+    ⚠️  Low Balance Warning: TRIGGERED
+       → Balance is low: 5.0000 USDFC (threshold: 100)
+    ```
+
+### 2. Verify Data Accuracy (Read-Only Check)
+
+These monitoring scripts perform **read-only** operations on the blockchain. They don't create transaction hashes, but you can prove they are reading real data:
+
+1.  Note the **"Current payment balance"** value in the script output (e.g., `4.9184 USDFC`).
+2.  Copy your wallet address from `.env.local`.
+3.  Search for your address on [calibration.filfox.info](https://calibration.filfox.info/).
+4.  **Compare**: The balance on the explorer should match the script output exactly.
+
+### 3. See a Real Notification
+
+To see a JSON payload fly across the internet:
+
+1.  Go to [webhook.site](https://webhook.site).
+2.  Copy your unique URL.
+3.  Run the alert system with this URL:
+    ```bash
+    WEBHOOK_URL="https://webhook.site/..." LOW_BALANCE_THRESHOLD=100 npm start
+    ```
+4.  Check the webhook.site dashboard—you will see the alert payload appear instantly!
+
 ## Conclusion
 
 Alert systems are the difference between proactive and reactive infrastructure management. By combining real-time queries, historical analysis, and automated notifications, you have built a monitoring pipeline that catches problems before they affect users.
