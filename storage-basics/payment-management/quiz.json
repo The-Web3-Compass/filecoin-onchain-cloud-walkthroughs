@@ -1,0 +1,70 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the difference between a wallet and a payment account?",
+            "options": [
+                "They are the same thing",
+                "Wallet holds funds you control; payment account holds funds operators can charge",
+                "Wallet is for storage; payment account is for gas",
+                "Wallet is on-chain; payment account is off-chain"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "Operators can charge your payment account without your approval.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What are the two types of allowances you must approve for operators?",
+            "options": [
+                "Read and write allowances",
+                "Rate allowance and lockup allowance",
+                "Upload and download allowances",
+                "Storage and retrieval allowances"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The _____ allowance controls how much an operator can charge per epoch.",
+            "answerHash": "d0d5c684c72e1e5c0e6c85e1b5e1c4e0e5e5e5e5"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "Why is it safe to set unlimited allowances for operators?",
+            "options": [
+                "Operators are trustworthy",
+                "On-chain enforcement prevents overcharging",
+                "The SDK limits charges automatically",
+                "You can always revoke access"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "You need to deposit USDFC into your payment account before uploading files.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does the Warm Storage operator do?",
+            "options": [
+                "Manages cold storage backups",
+                "Handles file uploads and storage deals",
+                "Provides caching services",
+                "Validates transactions"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

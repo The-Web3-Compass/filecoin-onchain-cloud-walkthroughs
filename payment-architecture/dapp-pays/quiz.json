@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "In the dApp-Pays model, who pays for all storage operations?",
+            "options": [
+                "Individual users",
+                "The application treasury",
+                "Storage providers",
+                "Third-party sponsors"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "In dApp-Pays architecture, users need to connect a crypto wallet to use the application.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is the main advantage of dApp-Pays for users?",
+            "options": [
+                "Lower storage costs",
+                "Zero crypto knowledge required and frictionless onboarding",
+                "Faster upload speeds",
+                "Unlimited storage capacity"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The application must maintain a mapping between user IDs and _____ in its database.",
+            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What happens if the dApp-Pays treasury runs out of funds?",
+            "options": [
+                "Users automatically switch to paying themselves",
+                "The entire application breaks and cannot accept uploads",
+                "Storage providers cover the costs",
+                "Old data is deleted to free up funds"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "In dApp-Pays, the blockchain shows the user's address as the payer for storage deals.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "How should users authenticate in a dApp-Pays application?",
+            "options": [
+                "Only through wallet connection",
+                "Through traditional means like email/password or OAuth",
+                "Through blockchain signatures only",
+                "No authentication needed"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What is a critical operational responsibility in dApp-Pays?",
+            "options": [
+                "Verifying user wallet balances",
+                "Maintaining the user→PieceCID mapping reliably",
+                "Approving every user upload manually",
+                "Rotating user passwords"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "dApp-Pays architecture can credibly claim censorship-resistant storage.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "When is dApp-Pays architecture most appropriate?",
+            "options": [
+                "Decentralization-maximalist applications",
+                "Consumer applications and onboarding-sensitive products",
+                "Applications where users demand data sovereignty",
+                "Very high-volume storage without monetization"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

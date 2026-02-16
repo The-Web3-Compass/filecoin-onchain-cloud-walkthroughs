@@ -1,0 +1,326 @@
+{
+    "storage-basics": {
+        "name": "Filecoin Storage Basics",
+        "description": "Complete tutorial series for learning Filecoin Onchain Cloud storage fundamentals, from environment setup to production deployment",
+        "resources": [
+            {
+                "id": "intro-video",
+                "name": "What is Filecoin Onchain Cloud?",
+                "type": "video",
+                "description": "5-minute introduction to Filecoin Onchain Cloud and how it differs from traditional cloud storage",
+                "url": "https://youtu.be/KH378P_CTK8",
+                "duration": "5 min"
+            },
+            {
+                "id": "get-token",
+                "name": "Getting Started with Filecoin Onchain Cloud",
+                "type": "walkthrough",
+                "description": "Get your development environment running and grab some test tokens. You'll install the Synapse SDK, fund a payment account, and figure out why Filecoin uses two different tokens instead of one.",
+                "walkthrough": "storage-basics/get-token/walkthrough/setup-and-initialization.md",
+                "code": "storage-basics/get-token/code/",
+                "quiz": "storage-basics/get-token/quiz.json",
+                "topics": [
+                    "Understanding Filecoin Networks (Mainnet vs Calibration)",
+                    "The Dual Token System (tFIL and USDFC)",
+                    "Installing Dependencies (Synapse SDK, ethers, dotenv)",
+                    "Funding Your Payment Account",
+                    "Payment Architecture Deep Dive"
+                ]
+            },
+            {
+                "id": "payment-management",
+                "name": "Payment Account Management",
+                "type": "walkthrough",
+                "description": "Payment accounts work differently than regular wallets. They hold funds that operators can charge automatically for storage services. You'll learn how to deposit USDFC and set up operator approvals without getting charged for things you didn't authorize.",
+                "walkthrough": "storage-basics/payment-management/walkthrough/managing-payment-accounts.md",
+                "code": "storage-basics/payment-management/code/",
+                "quiz": "storage-basics/payment-management/quiz.json",
+                "topics": [
+                    "Understanding Payment Accounts vs Wallets",
+                    "Operator Approvals and Allowances",
+                    "Depositing Funds for Storage Operations"
+                ]
+            },
+            {
+                "id": "payment-flow-video",
+                "name": "Storage + Payment Flow",
+                "type": "video",
+                "description": "5-minute visual walkthrough of how storage and payment operations work together in Filecoin",
+                "url": "https://youtu.be/XD-w8bHOfkA",
+                "duration": "5 min"
+            },
+            {
+                "id": "first-upload",
+                "name": "Your First Upload to Filecoin",
+                "type": "walkthrough",
+                "description": "Upload a file and get back a PieceCID, which is basically a cryptographic receipt proving your data is stored on the blockchain. You'll walk through the six phases of uploading and check your storage deal on the block explorer.",
+                "walkthrough": "storage-basics/first-upload/walkthrough/uploading-to-filecoin.md",
+                "code": "storage-basics/first-upload/code/",
+                "data": "storage-basics/first-upload/data/sample.txt",
+                "quiz": "storage-basics/first-upload/quiz.json",
+                "topics": [
+                    "Understanding PieceCID (Content-Addressable Identifiers)",
+                    "Filecoin vs Traditional Cloud Storage",
+                    "Payment and Allowance Verification",
+                    "Executing the Upload Operation",
+                    "What Happens During Upload (6 Phases)",
+                    "On-Chain Verification with Block Explorers",
+                    "Production Considerations (File Size, Metadata, Error Handling)"
+                ]
+            },
+            {
+                "id": "verification-video",
+                "name": "Understanding Verification",
+                "type": "video",
+                "description": "4-minute deep dive into how cryptographic verification ensures data integrity in Filecoin",
+                "url": "https://youtu.be/wXE0-orGao4",
+                "duration": "4 min"
+            },
+            {
+                "id": "download-verify",
+                "name": "Downloading and Verifying Data",
+                "type": "walkthrough",
+                "description": "Pull your file back down using its PieceCID and verify that every single byte matches what you originally uploaded. No trusting the provider, just pure math proving you got the right data.",
+                "walkthrough": "storage-basics/download-verify/walkthrough/downloading-and-verifying.md",
+                "code": "storage-basics/download-verify/code/",
+                "quiz": "storage-basics/download-verify/quiz.json",
+                "topics": [
+                    "PieceCID in Retrieval Context",
+                    "How Content-Addressable Retrieval Works",
+                    "Downloading Data from the Network",
+                    "Binary Data Handling (Uint8Array)",
+                    "Cryptographic Verification (Byte-for-Byte Comparison)",
+                    "Production Considerations (Caching, Redundancy, Large Files)"
+                ]
+            },
+            {
+                "id": "datasets",
+                "name": "Working with Datasets",
+                "type": "walkthrough",
+                "description": "Instead of juggling a dozen PieceCIDs, create a dataset that groups related files together. You get shared metadata, one payment rail for everything, and way less headache when you're uploading photo albums or document collections.",
+                "walkthrough": "storage-basics/datasets/walkthrough/working-with-datasets.md",
+                "code": "storage-basics/datasets/code/",
+                "data": "storage-basics/datasets/data/",
+                "quiz": "storage-basics/datasets/quiz.json",
+                "topics": [
+                    "Datasets vs Individual Pieces",
+                    "Real-World Use Cases for Datasets",
+                    "Creating Storage Contexts with Metadata",
+                    "Multi-File Uploads to Unified Datasets",
+                    "Dataset Information and Metadata Retrieval",
+                    "Proof Status Verification",
+                    "Production Considerations (Organization, Metadata Schema, Cost Optimization)"
+                ]
+            },
+            {
+                "id": "advanced-payment-management",
+                "name": "Advanced Payment Operations",
+                "type": "walkthrough",
+                "description": "Move past basic deposits and start monitoring your payment account like you would in production. Check balances, track how much is locked up, see which operators can charge you, and build alerts so you don't run out of funds mid-storage.",
+                "walkthrough": "storage-basics/advanced-payment-management/walkthrough/advanced-payment-operations.md",
+                "code": "storage-basics/advanced-payment-management/code/",
+                "quiz": "storage-basics/advanced-payment-management/quiz.json",
+                "topics": [
+                    "Payment Architecture Overview (3-Layer Model)",
+                    "Checking Wallet and Payment Account Balances",
+                    "Account Health Monitoring (Lockup, Available Funds, Days Remaining)",
+                    "Operator Approvals and Security",
+                    "Payment Rails Visualization",
+                    "Withdrawing Funds",
+                    "Production Deployment Strategies (Monitoring, Auto-Replenishment, Cost Tracking)"
+                ]
+            }
+        ]
+    },
+    "fast-delivery": {
+        "name": "Fast Delivery with Beam CDN",
+        "description": "Learn how to accelerate content delivery using Filecoin Beam CDN, monitor performance metrics, and stream large media files efficiently",
+        "resources": [
+            {
+                "id": "enable-beam",
+                "name": "Enabling Beam CDN for Fast Content Delivery",
+                "type": "walkthrough",
+                "description": "Turn on Beam CDN with a single parameter and watch your download speeds jump. You'll compare standard retrieval against CDN-enabled delivery, understand how provider competition works, and learn when the paid-per-byte model makes sense.",
+                "walkthrough": "fast-delivery/enable-beam/walkthrough/enable-beam.md",
+                "code": "fast-delivery/enable-beam/code/",
+                "quiz": "fast-delivery/enable-beam/quiz.json",
+                "topics": [
+                    "Beam CDN Architecture (Three-Layer Model)",
+                    "Provider Competition and Economic Incentives",
+                    "Edge Distribution and Caching",
+                    "Paid-Per-Byte Pricing Model",
+                    "Performance Comparison (Standard vs CDN)",
+                    "Geographic Distribution and Latency Reduction",
+                    "When to Use Beam CDN"
+                ]
+            },
+            {
+                "id": "monitor-beam-performance",
+                "name": "Monitor Beam Performance",
+                "type": "walkthrough",
+                "description": "Build an observability stack for your decentralized infrastructure. You'll create a heartbeat prober to measure TTFB and throughput, implement circuit breakers to prevent budget overruns, and launch a real-time dashboard that shows system health in under 500ms.",
+                "walkthrough": "fast-delivery/monitor-beam-performance/walkthrough/monitor-beam-performance.md",
+                "code": "fast-delivery/monitor-beam-performance/code/",
+                "quiz": "fast-delivery/monitor-beam-performance/quiz.json",
+                "topics": [
+                    "The Visibility Paradox in Decentralized Systems",
+                    "Performance Monitoring (TTFB vs Throughput)",
+                    "Circuit Breaker Pattern for Budget Control",
+                    "Streaming Payment Model Management",
+                    "Geometric Monitoring (Multi-Location Testing)",
+                    "Real-Time Observability Dashboard",
+                    "Automated Alerting and Cost Tracking"
+                ]
+            },
+            {
+                "id": "streaming-large-files",
+                "name": "Streaming Large Files",
+                "type": "walkthrough",
+                "description": "Break through the Memory Wall and stream gigabyte-sized videos without crashing your server. You'll use Node.js Streams to handle backpressure, build an HTTP Range Request proxy, and create a custom video player that seeks instantly without heavy frameworks.",
+                "walkthrough": "fast-delivery/streaming-large-files/walkthrough/streaming-large-files.md",
+                "code": "fast-delivery/streaming-large-files/code/",
+                "quiz": "fast-delivery/streaming-large-files/quiz.json",
+                "topics": [
+                    "The Memory Wall Problem",
+                    "Node.js Streams and Backpressure",
+                    "Data Gravity and Large File Ingestion",
+                    "HTTP Range Requests (RFC 7233)",
+                    "Streaming Proxy Architecture",
+                    "Native Browser APIs vs Heavy Frameworks",
+                    "Frame-Accurate Seeking and Playback"
+                ]
+            }
+        ]
+    },
+    "multi-chain-deployment": {
+        "name": "Multi-Chain Deployment",
+        "description": "Build applications that accept payments on any L2 chain while storing data on Filecoin, with quota management and NFT metadata support",
+        "resources": [
+            {
+                "id": "backend-storage",
+                "name": "Setting Up Backend Storage",
+                "type": "walkthrough",
+                "description": "Set up a backend service that handles Filecoin storage for any blockchain. Users pay on Base, Arbitrum, or Polygon, and your backend takes care of all the storage operations. No more forcing users to deal with Filecoin tokens directly.",
+                "walkthrough": "multi-chain-deployment/backend-storage/walkthrough/setting-up-backend-storage.md",
+                "code": "multi-chain-deployment/backend-storage/code/",
+                "quiz": "multi-chain-deployment/backend-storage/quiz.json",
+                "topics": [
+                    "Multi-Chain Storage Architecture",
+                    "Backend Wallet Initialization",
+                    "Dual Balance Checking (Wallet vs Payment Account)",
+                    "Operator Verification and Approval",
+                    "Upload and Download Integration",
+                    "Account Health Monitoring",
+                    "Web Server Integration Patterns",
+                    "Production Secret Management"
+                ]
+            },
+            {
+                "id": "payment-tracking",
+                "name": "Tracking User Payments and Quotas",
+                "type": "walkthrough",
+                "description": "Build the accounting layer that converts L2 payments into storage quotas. Track who paid what, enforce upload limits, and make sure nobody gets more storage than they paid for. Includes database schema and quota enforcement patterns.",
+                "walkthrough": "multi-chain-deployment/payment-tracking/walkthrough/tracking-payments-and-quotas.md",
+                "code": "multi-chain-deployment/payment-tracking/code/",
+                "quiz": "multi-chain-deployment/payment-tracking/quiz.json",
+                "topics": [
+                    "Payment-to-Quota Flow Architecture",
+                    "Database Schema Design (Users, Payments, Uploads)",
+                    "User Registration and Wallet Linking",
+                    "Payment Recording and Verification",
+                    "Quota Enforcement Before Uploads",
+                    "Upload Recording and Deduction",
+                    "Multi-Chain Payment Verification",
+                    "Production Considerations (Atomicity, Race Conditions, Alerts)"
+                ]
+            },
+            {
+                "id": "nft-metadata",
+                "name": "Storing NFT Metadata",
+                "type": "walkthrough",
+                "description": "Store NFT metadata on Filecoin and serve it to contracts on any chain. You'll work with ERC-721 JSON standards, build an API that returns metadata by token ID, and learn how one backend can power NFTs across Ethereum, Base, and Polygon simultaneously.",
+                "walkthrough": "multi-chain-deployment/nft-metadata/walkthrough/storing-nft-metadata.md",
+                "code": "multi-chain-deployment/nft-metadata/code/",
+                "quiz": "multi-chain-deployment/nft-metadata/quiz.json",
+                "topics": [
+                    "NFT Metadata Standards (ERC-721 and ERC-1155)",
+                    "PieceCID vs IPFS CID",
+                    "Single Token and Batch Collection Uploads",
+                    "Size Padding for Minimum Requirements",
+                    "API Server for Metadata Delivery",
+                    "Smart Contract Integration (tokenURI)",
+                    "Multi-Chain NFT Support",
+                    "Production Patterns (Caching, CDN, Rate Limiting)"
+                ]
+            }
+        ]
+    },
+    "payment-architecture": {
+        "name": "Payment Architecture Patterns",
+        "description": "Master the three payment models for Filecoin applications: User-Pays for maximum decentralization, dApp-Pays for frictionless onboarding, and Hybrid for sustainable growth",
+        "resources": [
+            {
+                "id": "user-pays",
+                "name": "Implementing User-Pays Architecture",
+                "type": "walkthrough",
+                "description": "Build applications where users control their wallets and pay for storage directly. You'll verify payment account balances, check operator approvals, and execute uploads that users fund themselves. Perfect for crypto-native apps that need censorship resistance.",
+                "walkthrough": "payment-architecture/user-pays/walkthrough/implementing-user-pays.md",
+                "code": "payment-architecture/user-pays/code/",
+                "quiz": "payment-architecture/user-pays/quiz.json",
+                "topics": [
+                    "User-Pays Model Overview",
+                    "Wallet Connection and Authentication",
+                    "Payment Account Balance Verification",
+                    "Operator Approval Verification",
+                    "Upload Execution with User Credentials",
+                    "Payment Rail Verification",
+                    "When to Use User-Pays Architecture",
+                    "Production Wallet Integration",
+                    "Error Communication and UX"
+                ]
+            },
+            {
+                "id": "dapp-pays",
+                "name": "Implementing dApp-Pays Architecture",
+                "type": "walkthrough",
+                "description": "Create Web2-like experiences where your application treasury covers all storage costs. Users authenticate with email, never see crypto, and upload files without wallets. You'll manage treasury solvency, map PieceCIDs to users, and build sustainable monetization strategies.",
+                "walkthrough": "payment-architecture/dapp-pays/walkthrough/implementing-dapp-pays.md",
+                "code": "payment-architecture/dapp-pays/code/",
+                "quiz": "payment-architecture/dapp-pays/quiz.json",
+                "topics": [
+                    "dApp-Pays Model Overview",
+                    "Treasury Wallet Setup and Security",
+                    "Treasury Solvency Verification",
+                    "Traditional User Authentication",
+                    "Sponsored Upload Execution",
+                    "Database Mapping (User to PieceCID)",
+                    "Economic Verification",
+                    "Treasury Monitoring and Alerting",
+                    "Monetization Strategies",
+                    "Data Deletion and Pruning"
+                ]
+            },
+            {
+                "id": "hybrid",
+                "name": "Building Hybrid Payment Systems",
+                "type": "walkthrough",
+                "description": "Combine the best of both worlds with tiered storage. Free users get treasury-sponsored storage up to quotas, power users pay directly for unlimited capacity. You'll build decision engines, implement quota systems, handle tier transitions, and create sustainable freemium models.",
+                "walkthrough": "payment-architecture/hybrid/walkthrough/building-hybrid-systems.md",
+                "code": "payment-architecture/hybrid/code/",
+                "quiz": "payment-architecture/hybrid/quiz.json",
+                "topics": [
+                    "Hybrid Architecture Overview",
+                    "Quota System Design",
+                    "Decision Engine Logic",
+                    "Sponsored Path (Treasury-Funded)",
+                    "User-Paid Path (Direct Payment)",
+                    "Tier Transitions (Upgrade and Downgrade)",
+                    "Dual Context Management",
+                    "Atomic Quota Checking",
+                    "Treasury Budget Allocation",
+                    "Graceful Degradation Patterns"
+                ]
+            }
+        ]
+    }
+}

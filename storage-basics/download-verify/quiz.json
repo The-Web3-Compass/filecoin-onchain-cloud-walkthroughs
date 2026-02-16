@@ -1,0 +1,88 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What do you need to download a file from Filecoin?",
+            "options": [
+                "The provider's IP address",
+                "The PieceCID",
+                "The transaction hash",
+                "The file name"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "You must download from the same provider you uploaded to.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What data type does the SDK return when downloading?",
+            "options": [
+                "String",
+                "Uint8Array",
+                "Buffer",
+                "JSON"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "How do you verify downloaded data matches the original?",
+            "options": [
+                "Check file size only",
+                "Byte-for-byte comparison using Buffer.compare",
+                "Trust the provider",
+                "Check the timestamp"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 5,
+            "type": "true-false",
+            "question": "The SDK automatically verifies that downloaded data matches the PieceCID.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 6,
+            "type": "fill-in-the-blank",
+            "question": "Filecoin uses _____ addressing instead of location addressing.",
+            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What is the main advantage of content-addressable storage?",
+            "options": [
+                "Faster downloads",
+                "Cheaper storage",
+                "Cryptographic verification without trust",
+                "Unlimited file sizes"
+            ],
+            "answerHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+        },
+        {
+            "id": 8,
+            "type": "true-false",
+            "question": "PieceCIDs are permanent addresses that work forever as long as one provider maintains the data.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 9,
+            "type": "multiple-choice",
+            "question": "What happens if a provider sends corrupted data?",
+            "options": [
+                "You receive the corrupted data",
+                "The download fails because PieceCID won't match",
+                "The SDK fixes the corruption",
+                "Nothing, you won't notice"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

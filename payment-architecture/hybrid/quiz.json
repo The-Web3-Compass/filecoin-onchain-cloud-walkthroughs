@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main purpose of Hybrid payment architecture?",
+            "options": [
+                "To eliminate all costs",
+                "To combine free tier sponsorship with user-paid upgrades",
+                "To force all users to pay",
+                "To simplify the codebase"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "In Hybrid architecture, free tier users never need to connect a wallet.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What does the decision engine in Hybrid architecture determine?",
+            "options": [
+                "Which storage provider to use",
+                "Whether to use treasury sponsorship or user payment",
+                "How to compress the data",
+                "When to delete old files"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "Hybrid architecture requires tracking user _____ to determine when they've exceeded free tier limits.",
+            "answerHash": "9f14025af0cf29c33f5bbbbb87d3a7b8f4b2f49a"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What happens when a free tier user exceeds their quota but has no wallet connected?",
+            "options": [
+                "Upload automatically succeeds",
+                "Treasury pays anyway",
+                "Upload is blocked and user is prompted to upgrade",
+                "Data is compressed to fit"
+            ],
+            "answerHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Pro tier users in Hybrid architecture always pay for their own storage.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "Why must quota checks be atomic with uploads?",
+            "options": [
+                "To improve performance",
+                "To prevent race conditions that could exceed limits",
+                "To reduce database size",
+                "To simplify the code"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What should happen if the treasury balance drops critically low in Hybrid architecture?",
+            "options": [
+                "Shut down the entire application",
+                "Implement graceful degradation by denying sponsorship",
+                "Delete user data to free funds",
+                "Automatically charge all users"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Hybrid architecture requires maintaining two SDK contexts: one for treasury and one for user wallet.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is the key economic insight of Hybrid architecture?",
+            "options": [
+                "All users should pay equally",
+                "Commoditize the basics while monetizing scale",
+                "Free tier should have no limits",
+                "Treasury should cover all costs forever"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

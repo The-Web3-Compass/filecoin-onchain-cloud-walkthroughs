@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main advantage of using datasets over individual pieces?",
+            "options": [
+                "Faster uploads",
+                "Unified payment rails and metadata for related files",
+                "Cheaper storage",
+                "Automatic backups"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "Each file in a dataset still gets its own unique PieceCID.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is a storage context?",
+            "options": [
+                "A type of wallet",
+                "A logical container that groups related files with metadata",
+                "A blockchain network",
+                "A file format"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "Dataset metadata is stored _____ and can be queried later.",
+            "answerHash": "c1dfd96eea8cc2b62785275bca38ac261256e278"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "How do you upload files to a dataset?",
+            "options": [
+                "Use synapse.storage.upload()",
+                "Use context.upload()",
+                "Use dataset.add()",
+                "Use provider.store()"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Dataset metadata is immutable once created.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "Which is a good use case for datasets?",
+            "options": [
+                "Single file uploads",
+                "Photo albums or document collections",
+                "Testing uploads",
+                "Temporary storage"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What should you include in dataset metadata schema?",
+            "options": [
+                "Random values",
+                "Consistent keys you'll search by, like project, date, owner",
+                "Only file names",
+                "Provider addresses"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Datasets typically use the same provider for all files for consistency.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What do storage providers submit to prove they're maintaining your data?",
+            "options": [
+                "Payment receipts",
+                "Cryptographic proofs (PoRep and PoSt)",
+                "File checksums",
+                "Transaction logs"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

@@ -1,0 +1,88 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main challenge of monitoring decentralized infrastructure?",
+            "options": [
+                "Too much data to process",
+                "You have more redundancy but less visibility",
+                "Providers charge too much for logs",
+                "Blockchain transactions are too slow"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What is TTFB?",
+            "options": [
+                "Total Time For Bytes",
+                "Time To First Byte",
+                "Transfer Time For Bandwidth",
+                "Throughput To File Buffer"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 3,
+            "type": "true-false",
+            "question": "TTFB measures latency while throughput measures bandwidth.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "What is the Circuit Breaker Pattern used for?",
+            "options": [
+                "Improving download speeds",
+                "Cutting off funding when budget thresholds are breached",
+                "Encrypting data transfers",
+                "Selecting the best provider"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 5,
+            "type": "fill-in-the-blank",
+            "question": "Filecoin uses a _____ payment model where funds are charged continuously based on usage.",
+            "answerHash": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Monitoring from a single location gives you an accurate picture of global performance.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does the Heartbeat Prober do?",
+            "options": [
+                "Repairs broken connections",
+                "Continuously audits network performance with synthetic transactions",
+                "Backs up your data automatically",
+                "Compresses files for faster delivery"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "Why is geometric monitoring important?",
+            "options": [
+                "It saves money on monitoring costs",
+                "Measuring from multiple locations reveals true global performance",
+                "It encrypts monitoring data",
+                "It reduces bandwidth usage"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "The real-time dashboard should answer 'Is the system healthy?' in under 500ms.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        }
+    ]
+}

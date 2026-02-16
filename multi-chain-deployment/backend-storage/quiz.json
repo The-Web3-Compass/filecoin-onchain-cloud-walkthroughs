@@ -1,0 +1,88 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main advantage of multi-chain storage architecture?",
+            "options": [
+                "Cheaper gas fees",
+                "Users pay on their preferred L2 chain while data is stored on Filecoin",
+                "Faster upload speeds",
+                "Automatic backups"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "Users need Filecoin tokens to use a multi-chain storage application.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What are the two types of balances the backend wallet needs to track?",
+            "options": [
+                "ETH and USDC",
+                "Wallet balance and payment account balance",
+                "Gas and storage",
+                "Locked and unlocked funds"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The backend wallet's private key should be stored in secure _____ management systems like AWS Secrets Manager.",
+            "answerHash": "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What does operator approval allow?",
+            "options": [
+                "Users to upload files",
+                "Storage providers to charge your payment account",
+                "Backend to download data",
+                "Frontend to connect to the API"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "The backend wallet should accept user payments directly.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What is the purpose of checking account health?",
+            "options": [
+                "To verify user permissions",
+                "To monitor available funds and lockups for continuous operation",
+                "To check network connectivity",
+                "To validate PieceCIDs"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "In production, where should the SDK be initialized?",
+            "options": [
+                "On every API request",
+                "Once at server startup and reused across requests",
+                "In the database",
+                "In the frontend"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "All user data ends up in the same storage system regardless of which L2 chain they used to pay.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        }
+    ]
+}

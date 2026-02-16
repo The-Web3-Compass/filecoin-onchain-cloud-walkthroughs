@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the standard JSON format for NFT metadata?",
+            "options": [
+                "ERC-20",
+                "ERC-721",
+                "ERC-1155",
+                "Both ERC-721 and ERC-1155"
+            ],
+            "answerHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "PieceCIDs expire after a certain period of time.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What are the required fields in ERC-721 metadata?",
+            "options": [
+                "name, image, attributes",
+                "name, description, image",
+                "tokenId, name, description",
+                "image, attributes, external_url"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "A _____ is a content-addressed identifier derived from your data's bytes.",
+            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "Why is size padding needed for NFT metadata uploads?",
+            "options": [
+                "To improve performance",
+                "Filecoin has a minimum upload size of 127 bytes",
+                "To compress the data",
+                "To encrypt the metadata"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "The same NFT metadata API can serve NFTs on multiple chains simultaneously.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does the tokenURI() function in an NFT contract return?",
+            "options": [
+                "The PieceCID directly",
+                "A URI pointing to the metadata JSON",
+                "The NFT image",
+                "The owner's address"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "Why should you implement caching for NFT metadata responses?",
+            "options": [
+                "To save database space",
+                "Filecoin retrieval can take seconds, caching serves repeat requests instantly",
+                "To encrypt the data",
+                "To reduce gas fees"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "You should store large NFT images directly in the metadata JSON.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is a manifest in the context of batch NFT uploads?",
+            "options": [
+                "A list of all NFT owners",
+                "A JSON file containing the collection info and token-to-PieceCID mappings",
+                "The smart contract code",
+                "A payment receipt"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

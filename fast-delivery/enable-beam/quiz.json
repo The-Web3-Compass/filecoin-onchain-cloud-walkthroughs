@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the main advantage of Filecoin Beam CDN over standard retrieval?",
+            "options": [
+                "Cheaper storage costs",
+                "Faster content delivery through edge caching and provider competition",
+                "Larger file size limits",
+                "Automatic backups"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "Beam CDN changes how content is identified or verified compared to standard Filecoin storage.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "How do you enable Beam CDN when creating a storage context?",
+            "options": [
+                "Set beamEnabled: true",
+                "Set withCDN: true",
+                "Set fastDelivery: true",
+                "Set cdn: 'beam'"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "What is the Beam CDN pricing model?",
+            "options": [
+                "Monthly subscription",
+                "Paid per byte delivered",
+                "Flat rate per file",
+                "Free with storage costs"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 5,
+            "type": "fill-in-the-blank",
+            "question": "Beam providers operate at _____ locations worldwide to reduce latency.",
+            "answerHash": "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Beam CDN uploads are typically faster than standard uploads.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What happens when multiple Beam providers compete to serve your content?",
+            "options": [
+                "The cheapest provider always wins",
+                "The SDK selects based on performance history and pricing",
+                "You must manually choose a provider",
+                "All providers serve the content simultaneously"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "When does Beam CDN provide the most benefit?",
+            "options": [
+                "Archival data accessed rarely",
+                "Single-use temporary files",
+                "Frequently accessed content with global users",
+                "Small files under 1KB"
+            ],
+            "answerHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Beam providers can modify your data to optimize delivery speed.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is the three-layer model in Beam CDN architecture?",
+            "options": [
+                "Upload, Storage, Download",
+                "Application, Beam CDN, Storage",
+                "Client, Server, Database",
+                "Frontend, Backend, Blockchain"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

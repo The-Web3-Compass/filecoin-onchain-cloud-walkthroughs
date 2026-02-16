@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is a PieceCID?",
+            "options": [
+                "A random identifier assigned by the provider",
+                "A cryptographic identifier derived from file content",
+                "A transaction hash",
+                "A wallet address"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "PieceCID changes if you upload the same file multiple times.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is the minimum file size for Filecoin uploads?",
+            "options": [
+                "1 byte",
+                "127 bytes",
+                "1 KB",
+                "1 MB"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "multiple-choice",
+            "question": "What is the maximum file size for Filecoin uploads?",
+            "options": [
+                "100 MB",
+                "200 MiB",
+                "1 GB",
+                "Unlimited"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 5,
+            "type": "fill-in-the-blank",
+            "question": "PieceCID is computed using a _____ tree structure.",
+            "answerHash": "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+        },
+        {
+            "id": 6,
+            "type": "multiple-choice",
+            "question": "How many phases does the upload process have?",
+            "options": [
+                "3",
+                "4",
+                "6",
+                "8"
+            ],
+            "answerHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+        },
+        {
+            "id": 7,
+            "type": "true-false",
+            "question": "You need to manually select a storage provider for each upload.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What happens during the data padding phase?",
+            "options": [
+                "Files are compressed",
+                "Files are padded to power-of-2 sizes for Merkle tree construction",
+                "Files are encrypted",
+                "Files are split into chunks"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "multiple-choice",
+            "question": "How can you verify your upload on-chain?",
+            "options": [
+                "Check your email",
+                "Use Filfox block explorer with your PieceCID",
+                "Call customer support",
+                "Check your wallet balance"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 10,
+            "type": "true-false",
+            "question": "Storage deals are created on-chain and are publicly verifiable.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        }
+    ]
+}

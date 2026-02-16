@@ -1,0 +1,88 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "In the User-Pays model, who controls the wallet and pays for storage?",
+            "options": [
+                "The application backend",
+                "The end-user",
+                "Storage providers",
+                "A third-party service"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "In User-Pays architecture, the application holds and manages user funds.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is the main tradeoff of User-Pays architecture?",
+            "options": [
+                "Higher costs for the application",
+                "Higher onboarding friction for users",
+                "Slower upload speeds",
+                "Limited storage capacity"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "Users must approve storage _____ to charge their payment account before uploads can succeed.",
+            "answerHash": "4f043e8d2d0c5d6e7e1b3e6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What are the two types of balances that need to be checked in User-Pays?",
+            "options": [
+                "ETH and USDC",
+                "Wallet balance and payment account balance",
+                "Available and locked funds",
+                "Gas and storage"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "In User-Pays architecture, the application can claim censorship resistance.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What does the application verify before allowing a User-Pays upload?",
+            "options": [
+                "Only wallet balance",
+                "Only operator approval",
+                "Both payment account balance and operator approval",
+                "User's email address"
+            ],
+            "answerHash": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "When is User-Pays architecture most appropriate?",
+            "options": [
+                "Mainstream consumer applications",
+                "Crypto-native applications and high-value data storage",
+                "Applications requiring free tiers",
+                "Social media platforms"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Payment rails in User-Pays show the user as the payer, not the application.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        }
+    ]
+}

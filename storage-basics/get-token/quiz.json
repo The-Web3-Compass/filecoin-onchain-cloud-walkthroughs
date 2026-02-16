@@ -1,0 +1,106 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What are the two tokens used in Filecoin Onchain Cloud?",
+            "options": [
+                "ETH and USDC",
+                "FIL and USDC",
+                "tFIL and USDFC",
+                "BTC and DAI"
+            ],
+            "answerHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
+        },
+        {
+            "id": 2,
+            "type": "multiple-choice",
+            "question": "What is tFIL used for in Filecoin Onchain Cloud?",
+            "options": [
+                "Paying for storage costs",
+                "Paying for gas fees on transactions",
+                "Staking for validators",
+                "Rewarding miners"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is USDFC used for?",
+            "options": [
+                "Gas fees",
+                "Storage costs",
+                "Network rewards",
+                "Validator deposits"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "true-false",
+            "question": "Payment accounts and wallets are the same thing in Filecoin Onchain Cloud.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What network should you use for development and testing?",
+            "options": [
+                "Mainnet",
+                "Calibration testnet",
+                "Ethereum mainnet",
+                "Polygon"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "multiple-choice",
+            "question": "Why does Filecoin use two separate tokens instead of one?",
+            "options": [
+                "To make it more complicated",
+                "To separate volatile gas costs from predictable storage costs",
+                "To increase transaction fees",
+                "To support multiple blockchains"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 7,
+            "type": "fill-in-the-blank",
+            "question": "The _____ SDK is used to interact with Filecoin Onchain Cloud.",
+            "answerHash": "c1dfd96eea8cc2b62785275bca38ac261256e278"
+        },
+        {
+            "id": 8,
+            "type": "true-false",
+            "question": "You need to approve operators before they can charge your payment account for storage services.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 9,
+            "type": "multiple-choice",
+            "question": "What happens during the deposit and approval process?",
+            "options": [
+                "Two separate transactions are required",
+                "An atomic transaction deposits funds and approves the operator simultaneously",
+                "Only a deposit is needed",
+                "Only an approval is needed"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What is the purpose of a payment account?",
+            "options": [
+                "To store private keys",
+                "To hold funds that operators can charge for storage services",
+                "To mine new blocks",
+                "To validate transactions"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

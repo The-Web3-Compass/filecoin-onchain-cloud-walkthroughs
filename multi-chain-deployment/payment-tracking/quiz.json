@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What is the purpose of the payment-to-quota flow?",
+            "options": [
+                "To encrypt user data",
+                "To convert payments on any chain to storage capacity on Filecoin",
+                "To verify user identities",
+                "To compress uploaded files"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "The transaction hash uniqueness constraint prevents double-crediting the same payment.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What three entities does the database schema track?",
+            "options": [
+                "Files, folders, permissions",
+                "Users, payments, uploads",
+                "Contracts, tokens, transactions",
+                "Wallets, balances, transfers"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "Before every upload, you must check if the user has sufficient remaining _____.",
+            "answerHash": "9f14025af0cf29c33f5bbbbb87d3a7b8f4b2f49a"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "Why should you use result.size instead of input size for quota accounting?",
+            "options": [
+                "It's faster to calculate",
+                "The SDK may pad data, so result.size is more accurate",
+                "It saves database space",
+                "It's required by Filecoin"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "Quota is deducted before the upload attempt to prevent abuse.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "How should you verify payments in production?",
+            "options": [
+                "Trust the user's claim",
+                "Verify transactions on-chain via L2 RPC",
+                "Check email receipts",
+                "Use a third-party API only"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "What is the purpose of database-level locking for quota checks?",
+            "options": [
+                "To improve performance",
+                "To prevent race conditions",
+                "To encrypt data",
+                "To reduce storage costs"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "SQLite is recommended for production deployments with high throughput.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "When should quota alerts be sent to users?",
+            "options": [
+                "Only when quota is completely exhausted",
+                "When approaching limits (e.g., 75% or 90% usage)",
+                "Every time they upload",
+                "Never, users should check themselves"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}

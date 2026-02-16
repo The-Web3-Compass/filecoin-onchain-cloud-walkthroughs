@@ -1,0 +1,100 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "type": "multiple-choice",
+            "question": "What are the three layers in Filecoin's payment model?",
+            "options": [
+                "Wallet, storage, retrieval",
+                "Wallet, payment account, locked funds",
+                "Upload, download, verify",
+                "Gas, storage, rewards"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 2,
+            "type": "true-false",
+            "question": "Locked funds can be withdrawn immediately at any time.",
+            "answerHash": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+            "id": 3,
+            "type": "multiple-choice",
+            "question": "What is a payment rail?",
+            "options": [
+                "A type of blockchain",
+                "An automated payment channel for ongoing storage",
+                "A wallet address",
+                "A transaction fee"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 4,
+            "type": "fill-in-the-blank",
+            "question": "The lockup rate determines how much USDFC is locked per _____.",
+            "answerHash": "3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea"
+        },
+        {
+            "id": 5,
+            "type": "multiple-choice",
+            "question": "What does the account health check tell you?",
+            "options": [
+                "Your wallet balance only",
+                "Total funds, lockup, available funds, and days remaining",
+                "Transaction history",
+                "Provider status"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 6,
+            "type": "true-false",
+            "question": "You should regularly review and revoke unnecessary operator approvals for security.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 7,
+            "type": "multiple-choice",
+            "question": "What percentage of available funds should you withdraw to avoid precision errors?",
+            "options": [
+                "100%",
+                "99.9%",
+                "95%",
+                "90%"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 8,
+            "type": "multiple-choice",
+            "question": "Why are funds locked in payment rails?",
+            "options": [
+                "To prevent fraud",
+                "To protect providers from non-payment during active storage deals",
+                "To earn interest",
+                "To pay gas fees"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        },
+        {
+            "id": 9,
+            "type": "true-false",
+            "question": "Payment rails automatically charge your account at regular intervals based on storage usage.",
+            "answerHash": "5ffe533b830f08a0326348a9160afafc8ada44db"
+        },
+        {
+            "id": 10,
+            "type": "multiple-choice",
+            "question": "What should production applications implement for payment monitoring?",
+            "options": [
+                "Manual checks only",
+                "Automated monitoring, alerts, and auto-replenishment",
+                "Daily email reports",
+                "Weekly balance checks"
+            ],
+            "answerHash": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+        }
+    ]
+}
