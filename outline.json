@@ -130,7 +130,19 @@
                     "Production Deployment Strategies (Monitoring, Auto-Replenishment, Cost Tracking)"
                 ]
             }
-        ]
+        ],
+        "capstone": {
+            "id": "capstone-project",
+            "name": "Storage Basics Capstone",
+            "description": "Build a simple file storage app with file upload, list stored files with metadata, download on click, show PieceCIDs and sizes, and display current balance. Demonstrates the complete storage lifecycle.",
+            "topics": [
+                "File Upload",
+                "List Files with Metadata",
+                "Download Files",
+                "Display PieceCIDs and Sizes",
+                "Show Account Balance"
+            ]
+        }
     },
     "fast-delivery": {
         "name": "Fast Delivery with Beam CDN",
@@ -190,7 +202,19 @@
                     "Frame-Accurate Seeking and Playback"
                 ]
             }
-        ]
+        ],
+        "capstone": {
+            "id": "capstone-project",
+            "name": "Fast Delivery Capstone",
+            "description": "Build a video streaming app with file upload, stream videos using Beam CDN, show loading progress, display playback with HTML5 video player, and track egress costs per video.",
+            "topics": [
+                "Upload Videos",
+                "Stream with Beam CDN",
+                "Show Loading Progress",
+                "HTML5 Video Player",
+                "Track Egress Costs per Video"
+            ]
+        }
     },
     "multi-chain-deployment": {
         "name": "Multi-Chain Deployment",
@@ -253,7 +277,20 @@
                     "Production Patterns (Caching, CDN, Rate Limiting)"
                 ]
             }
-        ]
+        ],
+        "capstone": {
+            "id": "capstone-project",
+            "name": "Multi-Chain Deployment Capstone",
+            "description": "Upload NFT metadata using filecoin-pin to generate IPFS CIDs. Deploy NFT contracts on Base, Arbitrum, and Polygon that reference the same IPFS URIs. Build gallery showing all NFTs with chain badges, click to view full metadata and verify storage proofs. Demonstrates how single IPFS-compatible storage layer serves multiple chains.",
+            "topics": [
+                "Upload NFT Metadata with filecoin-pin",
+                "Generate IPFS CIDs",
+                "Deploy NFT Contracts on Base, Arbitrum, and Polygon",
+                "Build NFT Gallery with Chain Badges",
+                "View Metadata and Verify Storage Proofs",
+                "Single Storage Layer for Multiple Chains"
+            ]
+        }
     },
     "payment-architecture": {
         "name": "Payment Architecture Patterns",
@@ -321,6 +358,20 @@
                     "Graceful Degradation Patterns"
                 ]
             }
-        ]
+        ],
+        "capstone": {
+            "id": "capstone-project",
+            "name": "Payment Architecture Capstone",
+            "description": "Build a Storage-as-a-Service platform implementing all three payment patterns (User-Pays, dApp-Pays, and Hybrid). Include a dashboard with payment model selector, usage tracking, cost breakdown per user, and payment rail health monitoring.",
+            "topics": [
+                "Implement User-Pays Model",
+                "Implement dApp-Pays Model",
+                "Implement Hybrid Payment System",
+                "Payment Model Selector",
+                "Usage Tracking",
+                "Cost Breakdown per User",
+                "Payment Rail Health Monitoring"
+            ]
+        }
     }
 }
