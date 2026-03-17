@@ -43,7 +43,7 @@ To get the most out of this series, you should have:
 
 1.  **Funded Wallet**: A dedicated MetaMask account for development (Calibration Testnet).
 2.  **Beam Knowledge**: Completed the [Enable Beam CDN](../enable-beam/walkthrough/enable-beam.md) walkthrough.
-3.  **Node.js Context**: Familiarity with `ethers.js` and async/await patterns.
+3.  **Node.js Context**: Familiarity with `viem` and async/await patterns.
 
 ---
 

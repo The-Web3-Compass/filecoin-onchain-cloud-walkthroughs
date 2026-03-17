@@ -105,26 +105,26 @@ The first operation in any payment management workflow is understanding where yo
 ### The Code
 
 ```javascript
-const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const walletBalance = await synapse.payments.walletBalance();
+const paymentBalance = await synapse.payments.balance();
 
 console.log("Wallet Balance:");
-console.log(`  ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+console.log(`  ${formatUnits(walletBalance)} USDFC`);
 
 console.log("Payment Account Balance:");
-console.log(`  ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+console.log(`  ${formatUnits(paymentBalance)} USDFC`);
 
 const totalBalance = walletBalance + paymentBalance;
-console.log(`Total USDFC: ${ethers.formatUnits(totalBalance, 18)}`);
+console.log(`Total USDFC: ${formatUnits(totalBalance)}`);
 ```
 
 ### What's Happening
 
-**`walletBalance(TOKENS.USDFC)`** queries the USDFC ERC-20 contract to check your wallet's token balance. This is the standard ERC-20 `balanceOf()` call, wrapped by the SDK for convenience.
+**`walletBalance()`** queries the USDFC ERC-20 contract to check your wallet's token balance. This is the standard ERC-20 `balanceOf()` call, wrapped by the SDK for convenience. USDFC is the default token, so no argument is needed.
 
-**`balance(TOKENS.USDFC)`** queries the Filecoin Pay contract to check your payment account balance. This is a separate balance from your wallet—funds you have explicitly deposited for storage operations.
+**`balance()`** queries the Filecoin Pay contract to check your payment account balance. This is a separate balance from your wallet—funds you have explicitly deposited for storage operations.
 
-Both methods return `bigint` values representing the smallest token unit (wei). We use `ethers.formatUnits(value, 18)` to convert to human-readable USDFC amounts (USDFC has 18 decimal places, like most ERC-20 tokens).
+Both methods return `bigint` values representing the smallest token unit (wei). We use `formatUnits(value)` from the Synapse SDK to convert to human-readable USDFC amounts.
 
 ### Why You Need Both
 
@@ -133,7 +133,7 @@ Checking only one balance gives an incomplete picture. Consider these scenarios:
 **Scenario 1: Funds in Wallet, Empty Payment Account**
 - You have USDFC but have not deposited it yet
 - Storage operations will fail
-- Solution: Deposit funds using `depositWithPermitAndApproveOperator()`
+- Solution: Deposit funds using `synapse.storage.prepare()` and executing the returned transaction
 
 **Scenario 2: Empty Wallet, Funds in Payment Account**
 - You can perform storage operations
@@ -168,12 +168,12 @@ Balance checks tell you how much you have. Account health monitoring tells you h
 ### The Code
 
 ```javascript
-const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+const accountInfo = await synapse.payments.accountInfo();
 
-console.log(`Total Funds: ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
-console.log(`Current Lockup: ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
-console.log(`Lockup Rate: ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
-console.log(`Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+console.log(`Total Funds: ${formatUnits(accountInfo.funds)} USDFC`);
+console.log(`Current Lockup: ${formatUnits(accountInfo.lockupCurrent)} USDFC`);
+console.log(`Lockup Rate: ${formatUnits(accountInfo.lockupRate)} USDFC/epoch`);
+console.log(`Available Funds: ${formatUnits(accountInfo.availableFunds)} USDFC`);
 
 // Calculate days remaining
 if (accountInfo.lockupRate > 0n) {
@@ -240,19 +240,20 @@ Operator approvals control which contracts can charge your payment account. Unde
 ### The Code
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const MAX_UINT256 = 2n ** 256n - 1n;
+// serviceApproval() takes no arguments — the SDK resolves the WarmStorage operator automatically
+const approval = await synapse.payments.serviceApproval();
 
 console.log(`Approved: ${approval.isApproved ? '✓ Yes' : '✗ No'}`);
 
 if (approval.isApproved) {
-    let rateDisplay = approval.rateAllowance === ethers.MaxUint256 
-        ? 'Unlimited' 
-        : `${ethers.formatUnits(approval.rateAllowance, 18)} USDFC`;
-    
-    let lockupDisplay = approval.lockupAllowance === ethers.MaxUint256 
-        ? 'Unlimited' 
-        : `${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`;
+    let rateDisplay = approval.rateAllowance === MAX_UINT256
+        ? 'Unlimited'
+        : `${formatUnits(approval.rateAllowance)} USDFC`;
+
+    let lockupDisplay = approval.lockupAllowance === MAX_UINT256
+        ? 'Unlimited'
+        : `${formatUnits(approval.lockupAllowance)} USDFC`;
 
     console.log(`Rate Allowance: ${rateDisplay}`);
     console.log(`Lockup Allowance: ${lockupDisplay}`);
@@ -263,9 +264,9 @@ if (approval.isApproved) {
 
 **`isApproved`** - Boolean indicating whether the operator has any approval. If false, the operator cannot create payment rails or charge your account.
 
-**`rateAllowance`** - Maximum amount the operator can charge per epoch. `ethers.MaxUint256` means unlimited, which is safe for audited operators like Warm Storage because on-chain logic enforces actual charges.
+**`rateAllowance`** - Maximum amount the operator can charge per epoch. `MAX_UINT256` (`2n ** 256n - 1n`) means unlimited, which is safe for audited operators like Warm Storage because on-chain logic enforces actual charges.
 
-**`lockupAllowance`** - Maximum amount the operator can lock up across all deals. Again, `ethers.MaxUint256` is common and safe for trusted operators.
+**`lockupAllowance`** - Maximum amount the operator can lock up across all deals. Again, `MAX_UINT256` is common and safe for trusted operators.
 
 ### Why Unlimited Allowances Are Safe
 
@@ -280,21 +281,9 @@ The key is that allowances are maximums, not actual charges. The operator can on
 
 Think of it like a credit card authorization. The merchant gets approval for "up to $X" but can only charge the actual purchase amount. The on-chain contract enforces the actual charge limits.
 
-### Checking Multiple Operators
+### Checking the WarmStorage Operator
 
-The example checks only the Warm Storage operator, but you might approve multiple operators in production:
-
-```javascript
-const operators = [
-    synapse.getWarmStorageAddress(),
-    // Add other operator addresses here
-];
-
-for (const operator of operators) {
-    const approval = await synapse.payments.serviceApproval(operator, TOKENS.USDFC);
-    console.log(`Operator ${operator}: ${approval.isApproved ? 'Approved' : 'Not Approved'}`);
-}
-```
+The `serviceApproval()` method automatically resolves the WarmStorage operator address — no argument required. This is the operator used by the Synapse SDK for Warm Storage operations. If you work with multiple operators, you would need to call their respective SDK methods or interact with the payment contract directly for each operator address.
 
 ### Security Best Practices
 
@@ -337,15 +326,15 @@ Each rail consists of:
 ### The Code
 
 ```javascript
-const payerRails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+const payerRails = await synapse.payments.getRailsAsPayer();
 
 console.log(`Found ${payerRails.length} active payment rail(s):`);
 
 for (const rail of payerRails) {
     console.log(`Rail ID: ${rail.railId}`);
     console.log(`  Status: ${rail.isTerminated ? '✗ Terminated' : '✓ Active'}`);
-    console.log(`  Payment Rate: ${ethers.formatUnits(rail.paymentRate, 18)} USDFC/epoch`);
-    
+    console.log(`  Payment Rate: ${formatUnits(rail.paymentRate)} USDFC/epoch`);
+
     const lockupDays = Number(rail.lockupPeriod) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
     console.log(`  Lockup Period: ${rail.lockupPeriod} epochs (~${lockupDays.toFixed(1)} days)`);
     console.log(`  Settled Up To: Epoch ${rail.settledUpTo}`);
@@ -371,11 +360,10 @@ for (const rail of payerRails) {
 For deeper inspection, use `getRail()` to get complete rail details:
 
 ```javascript
-const railDetails = await synapse.payments.getRail(railId);
+const railDetails = await synapse.payments.getRail({ railId: payerRails[0].railId });
 
 console.log(`Token: ${railDetails.token}`);
 console.log(`Commission Rate: ${railDetails.commissionRateBps} basis points`);
-console.log(`Fee Recipient: ${railDetails.serviceFeeRecipient}`);
 ```
 
 This shows additional information like commission rates (fees taken by the operator) and fee recipients.
@@ -425,23 +413,24 @@ If all your funds are locked, `availableFunds` will be 0 and withdrawal will fai
 ### The Code
 
 ```javascript
-const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+const accountInfo = await synapse.payments.accountInfo();
 
 if (accountInfo.availableFunds > 0n) {
-    const withdrawAmount = accountInfo.availableFunds;
-    console.log(`Withdrawing ${ethers.formatUnits(withdrawAmount, 18)} USDFC...`);
+    // Use 99.9% of available to avoid precision issues from ongoing charges
+    const withdrawAmount = (accountInfo.availableFunds * 999n) / 1000n;
+    console.log(`Withdrawing ${formatUnits(withdrawAmount)} USDFC...`);
 
-    const withdrawTx = await synapse.payments.withdraw(withdrawAmount, TOKENS.USDFC);
-    console.log(`Transaction Hash: ${withdrawTx.hash}`);
-    
-    const receipt = await withdrawTx.wait();
-    console.log(`✓ Withdrawal confirmed in block ${receipt.blockNumber}`);
+    const hash = await synapse.payments.withdraw({ amount: withdrawAmount });
+    console.log(`Transaction Hash: ${hash}`);
+
+    await synapse.client.waitForTransactionReceipt({ hash });
+    console.log(`✓ Withdrawal confirmed`);
 
     // Verify balances changed
-    const newWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-    const newPaymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`New Wallet Balance: ${ethers.formatUnits(newWalletBalance, 18)} USDFC`);
-    console.log(`New Payment Balance: ${ethers.formatUnits(newPaymentBalance, 18)} USDFC`);
+    const newWalletBalance = await synapse.payments.walletBalance();
+    const newPaymentBalance = await synapse.payments.balance();
+    console.log(`New Wallet Balance: ${formatUnits(newWalletBalance)} USDFC`);
+    console.log(`New Payment Balance: ${formatUnits(newPaymentBalance)} USDFC`);
 } else {
     console.log("No funds available to withdraw.");
 }
@@ -463,7 +452,7 @@ The example withdraws all available funds, but you can withdraw any amount up to
 ```javascript
 // Withdraw half of available funds
 const withdrawAmount = accountInfo.availableFunds / 2n;
-await synapse.payments.withdraw(withdrawAmount, TOKENS.USDFC);
+await synapse.payments.withdraw({ amount: withdrawAmount });
 ```
 
 Partial withdrawals are useful when you want to reduce your storage budget but maintain some buffer.
@@ -499,15 +488,15 @@ Integrating these payment operations into production requires thoughtful archite
 **Polling Approach**:
 ```javascript
 async function monitorPaymentHealth() {
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo();
     const daysRemaining = calculateDaysRemaining(accountInfo);
-    
+
     if (daysRemaining < 3) {
         await sendCriticalAlert("Payment account critically low!");
     } else if (daysRemaining < 7) {
         await sendWarningAlert("Payment account running low");
     }
-    
+
     // Log metrics for dashboards
     await logMetric("payment_account_balance", accountInfo.funds);
     await logMetric("days_remaining", daysRemaining);
@@ -522,7 +511,7 @@ setInterval(monitorPaymentHealth, 60 * 60 * 1000);
 // Listen for on-chain events
 const filter = paymentContract.filters.Withdraw();
 paymentContract.on(filter, (from, amount, event) => {
-    console.log(`Withdrawal detected: ${ethers.formatUnits(amount, 18)} USDFC`);
+    console.log(`Withdrawal detected: ${formatUnits(amount)} USDFC`);
     // Update internal state, trigger alerts, etc.
 });
 ```
@@ -533,19 +522,17 @@ Automatically deposit funds when balance gets low:
 
 ```javascript
 async function autoReplenish() {
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo();
     const daysRemaining = calculateDaysRemaining(accountInfo);
-    
+
     if (daysRemaining < 7) {
-        const depositAmount = ethers.parseUnits("10.0", 18); // 10 USDFC
-        await synapse.payments.depositWithPermitAndApproveOperator(
-            depositAmount,
-            synapse.getWarmStorageAddress(),
-            ethers.MaxUint256,
-            ethers.MaxUint256,
-            TIME_CONSTANTS.EPOCHS_PER_MONTH
-        );
-        console.log("Auto-replenished payment account");
+        // prepare() calculates the exact deposit needed for your target storage size
+        const prep = await synapse.storage.prepare({ dataSize: yourTargetDataSize });
+        if (prep.transaction) {
+            const { hash } = await prep.transaction.execute();
+            await synapse.client.waitForTransactionReceipt({ hash });
+            console.log("Auto-replenished payment account");
+        }
     }
 }
 ```
@@ -556,21 +543,21 @@ Track costs over time for budgeting and optimization:
 
 ```javascript
 async function trackCosts() {
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
-    
+    const rails = await synapse.payments.getRailsAsPayer();
+
     let totalCostPerEpoch = 0n;
     for (const rail of rails) {
         if (!rail.isTerminated) {
             totalCostPerEpoch += rail.paymentRate;
         }
     }
-    
+
     const costPerDay = totalCostPerEpoch * TIME_CONSTANTS.EPOCHS_PER_DAY;
     const costPerMonth = costPerDay * 30n;
-    
-    console.log(`Daily cost: ${ethers.formatUnits(costPerDay, 18)} USDFC`);
-    console.log(`Monthly cost: ${ethers.formatUnits(costPerMonth, 18)} USDFC`);
-    
+
+    console.log(`Daily cost: ${formatUnits(costPerDay)} USDFC`);
+    console.log(`Monthly cost: ${formatUnits(costPerMonth)} USDFC`);
+
     // Store in database for historical analysis
     await db.costs.insert({
         timestamp: Date.now(),
@@ -587,13 +574,13 @@ Expose payment metrics via API for dashboards:
 
 ```javascript
 app.get('/api/payment-status', async (req, res) => {
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
-    
+    const accountInfo = await synapse.payments.accountInfo();
+    const rails = await synapse.payments.getRailsAsPayer();
+
     res.json({
-        balance: ethers.formatUnits(accountInfo.funds, 18),
-        locked: ethers.formatUnits(accountInfo.lockupCurrent, 18),
-        available: ethers.formatUnits(accountInfo.availableFunds, 18),
+        balance: formatUnits(accountInfo.funds),
+        locked: formatUnits(accountInfo.lockupCurrent),
+        available: formatUnits(accountInfo.availableFunds),
         daysRemaining: calculateDaysRemaining(accountInfo),
         activeRails: rails.filter(r => !r.isTerminated).length,
         totalRails: rails.length
@@ -616,7 +603,7 @@ app.get('/api/payment-status', async (req, res) => {
 
 ### Rail Not Found
 
-**Symptom**: `getRail(railId)` throws "rail not found" error.
+**Symptom**: `getRail({ railId })` throws "rail not found" error.
 
 **Cause**: Rail ID does not exist or was terminated and cleaned up.
 

@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Checking Balances\n");
@@ -11,30 +11,32 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'check-balances'
     });
 
     console.log("✓ SDK initialized\n");
 
-    // Check wallet balance
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+    // Check wallet balance (USDFC is the default token)
+    const walletBalance = await synapse.payments.walletBalance();
     console.log("Wallet Balance:");
-    console.log(`  ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+    console.log(`  ${formatUnits(walletBalance)} USDFC`);
     console.log(`  → Funds in your wallet (not yet deposited)`);
     console.log(`  → Can be used for gas or deposited for storage\n`);
 
     // Check payment account balance
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance();
     console.log("Payment Account Balance:");
-    console.log(`  ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+    console.log(`  ${formatUnits(paymentBalance)} USDFC`);
     console.log(`  → Funds deposited for storage operations`);
     console.log(`  → Available for operator charges\n`);
 
     // Calculate total
     const totalBalance = walletBalance + paymentBalance;
-    console.log(`Total USDFC: ${ethers.formatUnits(totalBalance, 18)}\n`);
+    console.log(`Total USDFC: ${formatUnits(totalBalance)}\n`);
 
     console.log("✅ Balance check complete!");
 }

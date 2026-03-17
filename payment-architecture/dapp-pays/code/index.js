@@ -1,9 +1,6 @@
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Simulated application database
 const APPLICATION_DB = {
@@ -15,7 +12,7 @@ const APPLICATION_DB = {
 
 /**
  * dApp-Pays Architecture Demo
- * 
+ *
  * In this model, the application treasury pays for all storage.
  * Users never interact with wallets or tokens.
  */
@@ -30,9 +27,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY (Treasury wallet key)");
     }
 
-    const treasury = await Synapse.create({
-        privateKey: treasuryKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedKey = treasuryKey.startsWith('0x')
+        ? treasuryKey
+        : `0x${treasuryKey}`;
+
+    const treasury = Synapse.create({
+        account: privateKeyToAccount(formattedKey),
+        source: 'dapp-pays-demo'
     });
 
     console.log("=== Step 1: Treasury Initialized ===");
@@ -42,7 +43,7 @@ async function main() {
     // Step 2: Verify Treasury Solvency
     console.log("=== Step 2: Treasury Solvency Check ===");
 
-    const balance = await treasury.payments.balance(TOKENS.USDFC);
+    const balance = await treasury.payments.balance();
     const balanceFormatted = Number(balance) / 1e18;
 
     console.log(`Treasury Balance: ${balance.toString()} (raw units)`);
@@ -55,29 +56,14 @@ async function main() {
     }
 
     // Check account info for ongoing obligations
-    const health = await treasury.payments.accountInfo(TOKENS.USDFC);
+    const health = await treasury.payments.accountInfo();
     console.log(`\nTreasury Info:`);
     console.log(`  Available: ${(Number(health.availableFunds) / 1e18).toFixed(4)} USDFC`);
     console.log(`  Locked: ${(Number(health.lockupCurrent) / 1e18).toFixed(4)} USDFC`);
     console.log("Treasury is solvent.\n");
 
-    // Step 3: Verify Operator Approval
-    console.log("=== Step 3: Operator Approval ===");
-    const operatorAddress = treasury.getWarmStorageAddress();
-    const approval = await treasury.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    console.log(`Storage Operator: ${operatorAddress}`);
-    console.log(`Approved: ${approval.isApproved}`);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("\nStorage operator is not approved.");
-        console.log("Please run the payment-management tutorial first.");
-        process.exit(1);
-    }
-    console.log("Operator approved.\n");
-
-    // Step 4: Simulate User Request
-    console.log("=== Step 4: Simulated User Request ===");
+    // Step 3: Simulate User Request
+    console.log("=== Step 3: Simulated User Request ===");
 
     const userId = "user_alice";
     const user = APPLICATION_DB.users[userId];
@@ -97,8 +83,28 @@ async function main() {
 
     console.log(`User submitted ${userData.length} bytes for upload.`);
 
+    // Step 4: Verify Treasury is Ready to Sponsor
+    console.log("\n=== Step 4: Treasury Payment Readiness ===");
+
+    const prep = await treasury.storage.prepare({
+        dataSize: BigInt(userData.length)
+    });
+
+    if (!prep.costs.ready && prep.transaction) {
+        console.log("Setting up treasury payment and approval (one-time setup)...");
+        const { hash } = await prep.transaction.execute();
+        await treasury.client.waitForTransactionReceipt({ hash });
+        console.log("Treasury payment setup confirmed.\n");
+    } else if (!prep.costs.ready) {
+        console.log("\nTreasury payment account is not ready.");
+        console.log("Please run the payment-management tutorial to fund the treasury.");
+        process.exit(1);
+    } else {
+        console.log("Treasury is ready to sponsor uploads.\n");
+    }
+
     // Step 5: Sponsored Upload
-    console.log("\n=== Step 5: Sponsored Upload ===");
+    console.log("=== Step 5: Sponsored Upload ===");
     console.log("Application treasury is signing and paying for this upload.");
     console.log("User will not see any transaction or pay any fees.\n");
 
@@ -111,10 +117,7 @@ async function main() {
 
         console.log("Upload successful.");
         console.log(`PieceCID: ${uploadResult.pieceCid}`);
-        console.log(`Size: ${uploadResult.size} bytes`);
-        if (uploadResult.provider) {
-            console.log(`Provider: ${uploadResult.provider}`);
-        }
+        console.log(`Copies stored: ${uploadResult.copies.length}`);
         console.log(`Sponsor: Application Treasury`);
     } catch (error) {
         console.error("Sponsored upload failed:", error.message);
@@ -126,7 +129,6 @@ async function main() {
 
     user.uploads.push({
         pieceCid: uploadResult.pieceCid,
-        size: uploadResult.size,
         uploadedAt: new Date().toISOString(),
         sponsoredBy: "treasury"
     });
@@ -139,13 +141,13 @@ async function main() {
     console.log("User's storage inventory:");
     user.uploads.forEach((upload, index) => {
         console.log(`  ${index + 1}. ${upload.pieceCid.toString().substring(0, 30)}...`);
-        console.log(`     Size: ${upload.size} bytes, Uploaded: ${upload.uploadedAt}`);
+        console.log(`     Uploaded: ${upload.uploadedAt}`);
     });
 
     // Step 7: Verify Economic Relationship
     console.log("\n=== Step 7: Economic Verification ===");
 
-    const rails = await treasury.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await treasury.payments.getRailsAsPayer({});
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Treasury has ${activeRails.length} active payment rails.`);
@@ -155,7 +157,7 @@ async function main() {
     // Step 8: Treasury Health After Operation
     console.log("=== Step 8: Post-Operation Treasury Health ===");
 
-    const newHealth = await treasury.payments.accountInfo(TOKENS.USDFC);
+    const newHealth = await treasury.payments.accountInfo();
     console.log(`Updated Treasury Info:`);
     console.log(`  Available: ${(Number(newHealth.availableFunds) / 1e18).toFixed(4)} USDFC`);
     console.log(`  Locked: ${(Number(newHealth.lockupCurrent) / 1e18).toFixed(4)} USDFC`);

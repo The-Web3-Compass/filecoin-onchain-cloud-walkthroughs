@@ -1,13 +1,10 @@
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 /**
  * User-Pays Architecture Demo
- * 
+ *
  * In this model, the user controls their wallet and pays for storage directly.
  * The application facilitates operations but never handles funds.
  */
@@ -22,9 +19,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: userPrivateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedKey = userPrivateKey.startsWith('0x')
+        ? userPrivateKey
+        : `0x${userPrivateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedKey),
+        source: 'user-pays-demo'
     });
 
     console.log("=== Step 1: SDK Initialized ===");
@@ -34,9 +35,11 @@ async function main() {
     // Step 2: Check Payment Account Balance
     console.log("=== Step 2: Payment Account Balance ===");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance();
+    const paymentBalance = await synapse.payments.balance();
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
+    console.log(`Wallet Balance: ${(Number(walletBalance) / 1e18).toFixed(4)} USDFC`);
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
     console.log(`Formatted: ${balanceFormatted.toFixed(4)} USDFC`);
 
@@ -48,27 +51,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    // Step 3: Verify Operator Approval
-    console.log("=== Step 3: Operator Approval ===");
-
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    console.log(`Storage Operator: ${operatorAddress}`);
-    console.log(`Approved: ${approval.isApproved}`);
-    console.log(`Rate Allowance: ${approval.rateAllowance.toString()}`);
-    console.log(`Lockup Allowance: ${approval.lockupAllowance.toString()}`);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("\nStorage operator is not approved to charge this user.");
-        console.log("Please run the payment-management tutorial first.");
-        process.exit(1);
-    }
-
-    console.log("Operator is approved.\n");
-
-    // Step 4: Execute Storage Operation
-    console.log("=== Step 4: Upload Execution ===");
+    // Step 3: Verify Payment Readiness
+    console.log("=== Step 3: Payment Readiness ===");
 
     const sampleData = Buffer.from(
         `User-Pays Demo File\n` +
@@ -78,6 +62,20 @@ async function main() {
         `Minimum upload size is 127 bytes.`
     );
 
+    const prep = await synapse.storage.prepare({
+        dataSize: BigInt(sampleData.length)
+    });
+
+    if (!prep.costs.ready) {
+        console.log("\nPayment account needs additional funds or approvals for this upload.");
+        console.log("Please run the payment-management tutorial first.");
+        process.exit(1);
+    }
+
+    console.log("Payment account is ready for storage operations.\n");
+
+    // Step 4: Execute Storage Operation
+    console.log("=== Step 4: Upload Execution ===");
     console.log(`Uploading ${sampleData.length} bytes...`);
     console.log("(This may take 30-60 seconds)\n");
 
@@ -86,10 +84,7 @@ async function main() {
 
         console.log("Upload successful.");
         console.log(`PieceCID: ${result.pieceCid}`);
-        console.log(`Size: ${result.size} bytes`);
-        if (result.provider) {
-            console.log(`Provider: ${result.provider}`);
-        }
+        console.log(`Copies stored: ${result.copies.length}`);
     } catch (error) {
         console.error("Upload failed:", error.message);
         process.exit(1);
@@ -98,7 +93,7 @@ async function main() {
     // Step 5: Verify Payment Rail
     console.log("\n=== Step 5: Payment Verification ===");
 
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await synapse.payments.getRailsAsPayer({});
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Total payment rails: ${rails.length}`);
@@ -114,7 +109,7 @@ async function main() {
     console.log("\n=== Summary ===");
     console.log("User-Pays architecture complete.");
     console.log("- SDK initialized with user wallet credentials");
-    console.log("- Verified user has funds and approvals");
+    console.log("- Verified user has funds and payment is ready");
     console.log("- Executed an upload paid by user's payment account");
     console.log("- Application never held or managed any funds");
 }

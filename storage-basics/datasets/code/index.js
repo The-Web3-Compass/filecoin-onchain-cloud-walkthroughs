@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse } from '@filoz/synapse-sdk';
 import { readFileSync, readdirSync } from 'fs';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Working with Filecoin Datasets...\n");
@@ -11,19 +12,21 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'datasets-tutorial'
     });
 
     console.log("✓ SDK initialized\n");
 
     // ========================================================================
-    // Step 1: Verify Payment Account and Allowances
+    // Step 1: Verify Payment Account
     // ========================================================================
     console.log("=== Step 1: Verify Payment Account ===");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance();
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
 
     if (paymentBalance === 0n) {
@@ -35,8 +38,7 @@ async function main() {
     console.log("✓ Payment account is funded");
 
     // Verify operator allowances
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const approval = await synapse.payments.serviceApproval();
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("⚠️  Warning: Operator allowances are not set!");
@@ -96,7 +98,7 @@ async function main() {
                 filename: filename,
                 pieceCid: result.pieceCid,
                 size: result.size,
-                provider: result.provider
+                providerId: result.copies?.[0]?.providerId
             });
 
             console.log(`  ✓ Uploaded successfully`);
@@ -115,7 +117,6 @@ async function main() {
     console.log("=== Step 4: Retrieve Dataset Information ===");
 
     try {
-        // Get storage info to see our dataset
         const storageInfo = await synapse.storage.getStorageInfo();
 
         console.log("Storage Information:");
@@ -126,7 +127,7 @@ async function main() {
             console.log(`\n  Primary Provider:`);
             console.log(`    Name: ${provider.name || 'Unnamed'}`);
             console.log(`    ID: ${provider.id}`);
-            console.log(`    Active: ${provider.active}`);
+            console.log(`    Active: ${provider.isActive}`);
             console.log(`    Address: ${provider.serviceProvider}`);
         }
 
@@ -147,8 +148,8 @@ async function main() {
         console.log(`  File: ${result.filename}`);
         console.log(`  PieceCID: ${result.pieceCid}`);
         console.log(`  Size: ${result.size} bytes`);
-        if (result.provider) {
-            console.log(`  Provider: ${result.provider}`);
+        if (result.providerId) {
+            console.log(`  Provider ID: ${result.providerId}`);
         }
         console.log();
     });
@@ -164,7 +165,6 @@ async function main() {
     console.log("┌─────────────────────────────────────────────────────────────────┐");
 
     for (const result of uploadResults) {
-        // Convert pieceCid to string (it may be a PieceLink object)
         const cidString = String(result.pieceCid);
         const shortCid = cidString.substring(0, 20) + '...' + cidString.substring(cidString.length - 10);
         console.log(`│ ${result.filename.padEnd(20)} │ ${shortCid.padEnd(35)} │`);

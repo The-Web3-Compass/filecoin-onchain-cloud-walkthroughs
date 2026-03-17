@@ -85,7 +85,9 @@ Create a file named `index.js` in the `code/` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -114,9 +116,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: 'agent-memory-walkthrough'
     });
 
     console.log("SDK initialized successfully.\n");
@@ -126,7 +132,7 @@ async function main() {
     // ========================================================================
     console.log("=== Step 2: Verify Payment Readiness ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
@@ -140,8 +146,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("Storage operator is not approved to charge this account.");
@@ -288,7 +294,7 @@ async function main() {
     console.log(`Retrieving memory entry ${targetEntry.sequence} (${targetEntry.type})...`);
     console.log(`PieceCID: ${targetEntry.pieceCid}\n`);
 
-    const downloaded = await synapse.storage.download(String(targetEntry.pieceCid));
+    const downloaded = await synapse.storage.download({ pieceCid: targetEntry.pieceCid });
 
     const downloadedString = new TextDecoder().decode(downloaded);
     const downloadedEntry = JSON.parse(downloadedString);
@@ -378,7 +384,7 @@ const context = await synapse.storage.createContext({
 });
 ```
 
-The `createContext()` method establishes a data set on the Filecoin network. This data set serves as the container for all memory entries. The metadata object is stored on-chain and can be queried later — you could search for "all data sets where type is agent-memory" or "all data sets for StorageOptimizer-v1."
+The `createContext()` method establishes a data set on the Filecoin network. The `metadata` field in the options object is stored on-chain and can be queried later — you could search for "all data sets where type is agent-memory" or "all data sets for StorageOptimizer-v1."
 
 Data set metadata is limited to 10 key-value pairs, with keys up to 32 characters and values up to 128 characters. We use four fields: `type` classifies the data set, `agent` links it to a specific agent identity, `format` describes the content structure, and `created` records when the memory store was initialized.
 
@@ -442,7 +448,7 @@ Each upload returns a `pieceCid` and `size`. We collect these results for later 
 ### Memory Retrieval and Verification
 
 ```javascript
-const downloaded = await synapse.storage.download(String(targetEntry.pieceCid));
+const downloaded = await synapse.storage.download({ pieceCid: targetEntry.pieceCid });
 
 const downloadedString = new TextDecoder().decode(downloaded);
 const downloadedEntry = JSON.parse(downloadedString);
@@ -451,7 +457,7 @@ const originalBytes = JSON.stringify(memoryEntries[0]);
 const matches = downloadedString === originalBytes;
 ```
 
-We download a specific memory entry using its PieceCID and verify the content matches the original. The `download()` method takes a PieceCID string directly — we use `String()` to convert the `PieceLink` object returned by the upload. It returns a `Uint8Array` which we decode to a string and parse as JSON.
+We download a specific memory entry using its PieceCID and verify the content matches the original. The `download()` method takes an options object with a `pieceCid` field — pass the `PieceCID` object from the upload result directly. It returns a `Uint8Array` which we decode to a string and parse as JSON.
 
 The verification step compares the downloaded bytes against the original serialization. This demonstrates the core property of verifiable memory: anyone with the PieceCID can retrieve the entry and confirm it has not been altered. An auditor does not need the agent operator's cooperation — they can independently verify any memory entry using only the PieceCID.
 

@@ -3,6 +3,7 @@ import { Synapse } from '@filoz/synapse-sdk';
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Get the directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -38,9 +39,11 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'download-verify-tutorial'
     });
 
     console.log("✓ SDK initialized\n");
@@ -52,7 +55,7 @@ async function main() {
 
     // The download method searches the network for providers hosting this PieceCID
     // and retrieves the content securely.
-    const downloadedData = await synapse.storage.download(PIECE_CID);
+    const downloadedData = await synapse.storage.download({ pieceCid: PIECE_CID });
 
     console.log(`✓ Download complete! Received ${downloadedData.length} bytes.`);
 

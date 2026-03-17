@@ -1,7 +1,8 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
-import { writeFileSync, readFileSync } from 'fs';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { createPublicClient, createWalletClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -36,25 +37,30 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const rpcUrl = process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1";
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(rpcUrl),
+        account,
+        source: 'agent-card-walkthrough'
     });
 
-    const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-    );
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const publicClient = createPublicClient({
+        chain: calibration,
+        transport: http(rpcUrl)
+    });
 
     console.log("SDK initialized successfully.");
-    console.log(`Agent Wallet: ${wallet.address}\n`);
+    console.log(`Agent Wallet: ${account.address}\n`);
 
     // ========================================================================
     // Step 2: Verify Payment Readiness
     // ========================================================================
     console.log("=== Step 2: Verify Payment Readiness ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
@@ -68,8 +74,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     console.log(`Storage Operator: ${operatorAddress}`);
     console.log(`Approved: ${approval.isApproved}`);
@@ -148,7 +154,7 @@ async function main() {
     console.log("(This may take 30-60 seconds)\n");
 
     const uploadResult = await synapse.storage.upload(cardBytes, {
-        metadata: {
+        pieceMetadata: {
             type: "agent-card",
             protocol: "ERC-8004",
             agent: agentCard.name,
@@ -161,8 +167,8 @@ async function main() {
     console.log("Upload Response:");
     console.log(`  PieceCID: ${uploadResult.pieceCid}`);
     console.log(`  Size: ${uploadResult.size} bytes`);
-    if (uploadResult.provider) {
-        console.log(`  Provider: ${uploadResult.provider}`);
+    if (uploadResult.copies && uploadResult.copies[0]) {
+        console.log(`  Provider: ${uploadResult.copies[0].providerId}`);
     }
     console.log();
 
@@ -173,7 +179,7 @@ async function main() {
 
     console.log("Downloading card from Filecoin using PieceCID...\n");
 
-    const downloaded = await synapse.storage.download(String(uploadResult.pieceCid));
+    const downloaded = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 
     const downloadedString = new TextDecoder().decode(downloaded);
     const downloadedCard = JSON.parse(downloadedString);
@@ -202,21 +208,26 @@ async function main() {
 
     const REGISTRY_ADDRESS = "0x0000000000000000000000000000000000000000";
     const REGISTRY_ABI = [
-        "function registerAgent(string memory tokenURI) public returns (uint256)",
-        "event AgentRegistered(uint256 indexed agentId, address indexed owner, string tokenURI)"
+        {
+            name: 'registerAgent',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [{ name: 'tokenURI', type: 'string' }],
+            outputs: [{ name: 'agentId', type: 'uint256' }]
+        }
     ];
 
     const tokenURI = `piece://${String(uploadResult.pieceCid)}`;
 
     console.log("Registration Parameters:");
     console.log(`  Registry: ${REGISTRY_ADDRESS} (placeholder)`);
-    console.log(`  Owner: ${wallet.address}`);
+    console.log(`  Owner: ${account.address}`);
     console.log(`  Token URI: ${tokenURI}`);
     console.log();
 
     // Check if a real registry exists at the address
-    const code = await provider.getCode(REGISTRY_ADDRESS);
-    if (code === '0x') {
+    const bytecode = await publicClient.getBytecode({ address: REGISTRY_ADDRESS });
+    if (!bytecode || bytecode === '0x') {
         console.log("Registry contract is not deployed at this address.");
         console.log("In a production deployment, the following transaction would execute:");
         console.log(`  registry.registerAgent("${tokenURI}")`);
@@ -227,11 +238,20 @@ async function main() {
         console.log("  3. Emit an AgentRegistered event with the new agent ID");
         console.log("  4. Map the agent ID to the owner wallet address");
     } else {
-        const registry = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, wallet);
+        const walletClient = createWalletClient({
+            chain: calibration,
+            transport: http(rpcUrl),
+            account
+        });
         try {
-            const tx = await registry.registerAgent(tokenURI);
-            console.log(`Transaction sent: ${tx.hash}`);
-            const receipt = await tx.wait();
+            const txHash = await walletClient.writeContract({
+                address: REGISTRY_ADDRESS,
+                abi: REGISTRY_ABI,
+                functionName: 'registerAgent',
+                args: [tokenURI]
+            });
+            console.log(`Transaction sent: ${txHash}`);
+            await publicClient.waitForTransactionReceipt({ hash: txHash });
             console.log("Registration confirmed on-chain.");
         } catch (error) {
             console.log("Registration transaction failed:", error.message);
@@ -274,7 +294,7 @@ async function main() {
 
     console.log("Key Identifiers:");
     console.log(`  PieceCID: ${uploadResult.pieceCid}`);
-    console.log(`  Agent Wallet: ${wallet.address}`);
+    console.log(`  Agent Wallet: ${account.address}`);
     console.log(`  Token URI: ${tokenURI}\n`);
 
     console.log("Save your PieceCID. You will need it in the next walkthrough");

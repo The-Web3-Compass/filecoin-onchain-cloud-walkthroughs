@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http, formatUnits } from 'viem';
 import nodemailer from 'nodemailer';
 
 // Load environment
@@ -37,9 +38,12 @@ async function main() {
     // ========================================================================
     console.log("=== Step 1: SDK Initialization ===\n");
 
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("✓ SDK initialized\n");
@@ -90,7 +94,7 @@ async function main() {
                 const bal = Number(ctx.paymentBalance) / 1e18;
                 return bal < LOW_BALANCE_THRESHOLD && bal >= CRITICAL_BALANCE_THRESHOLD;
             },
-            message: (ctx) => `Balance is low: ${ethers.formatUnits(ctx.paymentBalance, 18)} USDFC (threshold: ${LOW_BALANCE_THRESHOLD})`
+            message: (ctx) => `Balance is low: ${formatUnits(ctx.paymentBalance, 18)} USDFC (threshold: ${LOW_BALANCE_THRESHOLD})`
         },
         {
             id: 'critical_balance',
@@ -100,15 +104,15 @@ async function main() {
                 const bal = Number(ctx.paymentBalance) / 1e18;
                 return bal < CRITICAL_BALANCE_THRESHOLD;
             },
-            message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${ethers.formatUnits(ctx.paymentBalance, 18)} USDFC`
+            message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${formatUnits(ctx.paymentBalance, 18)} USDFC`
         },
         {
             id: 'operator_not_approved',
             name: 'Operator Not Approved',
             severity: 'error',
             condition: async (ctx) => {
-                const operatorAddress = ctx.synapse.getWarmStorageAddress();
-                const approval = await ctx.synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+                const operatorAddress = ctx.synapse.chain.contracts.fwss.address;
+                const approval = await ctx.synapse.payments.serviceApproval({ service: operatorAddress });
                 return !approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n;
             },
             message: () => 'Storage operator is not approved. Storage operations will fail.'
@@ -118,14 +122,14 @@ async function main() {
             name: 'Storage Duration Warning',
             severity: 'warning',
             condition: async (ctx) => {
-                const accountInfo = await ctx.synapse.payments.accountInfo(TOKENS.USDFC);
+                const accountInfo = await ctx.synapse.payments.accountInfo({ token: TOKENS.USDFC });
                 if (accountInfo.lockupRate === 0n) return false;
                 const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
                 const daysRemaining = Number(epochsRemaining) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
                 return daysRemaining < 14 && daysRemaining > 0;
             },
             message: async (ctx) => {
-                const accountInfo = await ctx.synapse.payments.accountInfo(TOKENS.USDFC);
+                const accountInfo = await ctx.synapse.payments.accountInfo({ token: TOKENS.USDFC });
                 if (accountInfo.lockupRate === 0n) return 'No active deals';
                 const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
                 const daysRemaining = Number(epochsRemaining) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
@@ -145,8 +149,8 @@ async function main() {
     // ========================================================================
     console.log("=== Step 4: Checking Alert Conditions ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Current payment balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC\n`);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
+    console.log(`Current payment balance: ${formatUnits(paymentBalance, 18)} USDFC\n`);
 
     const context = { synapse, paymentBalance };
 

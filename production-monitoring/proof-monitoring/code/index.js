@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http, formatUnits } from 'viem';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -27,25 +28,38 @@ async function main() {
     // ========================================================================
     console.log("=== Step 1: SDK Initialization ===\n");
 
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    // The SDK now uses viem for wallet management.
+    // privateKeyToAccount converts your raw private key into a viem account object.
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+
+    // Synapse.create() is now synchronous — no await needed.
+    // Pass chain, transport (with optional custom RPC), account, and source.
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("✓ SDK initialized successfully");
-    console.log(`  Connected to: Filecoin Calibration Testnet\n`);
+    console.log(`  Connected to: ${synapse.chain.name} (chain ID: ${synapse.chain.id})\n`);
 
     // ========================================================================
     // Step 2: Get Core Contract Addresses
     // ========================================================================
     console.log("=== Step 2: Core Contract Addresses ===\n");
 
-    const warmStorageAddress = synapse.getWarmStorageAddress();
+    // Contract addresses are now read directly from synapse.chain.contracts
+    // instead of method calls like the former getWarmStorageAddress()
+    const warmStorageAddress = synapse.chain.contracts.fwss.address;
+    const paymentsAddress = synapse.chain.contracts.filecoinPay.address;
+    const pdpVerifierAddress = synapse.chain.contracts.pdpVerifier.address;
 
     console.log("Key Infrastructure Contracts:");
-    console.log(`  Warm Storage Operator: ${warmStorageAddress}`);
-    console.log("\nThis is the storage operator that manages uploads and proofs.");
-    console.log("You can look up this address on https://calibration.filfox.info/ to see activity.\n");
+    console.log(`  Warm Storage (FWSS): ${warmStorageAddress}`);
+    console.log(`  Payments:            ${paymentsAddress}`);
+    console.log(`  PDP Verifier:        ${pdpVerifierAddress}`);
+    console.log("\nYou can look up these addresses on https://calibration.filfox.info/ to see activity.\n");
 
     // ========================================================================
     // Step 3: Storage Service Information
@@ -53,25 +67,26 @@ async function main() {
     console.log("=== Step 3: Storage Service Parameters ===\n");
 
     try {
+        // getStorageInfo() is now on synapse.storage (not on synapse directly).
+        // The response structure changed: pricing is now per TiB, not per byte.
         const storageInfo = await synapse.storage.getStorageInfo();
 
         console.log("Current Storage Service Configuration:");
 
-        if (storageInfo.providerAddress) {
-            console.log(`  Provider Address: ${storageInfo.providerAddress}`);
+        if (storageInfo.pricing?.noCDN?.perTiBPerMonth) {
+            console.log(`  Price per TiB/month: ${formatUnits(storageInfo.pricing.noCDN.perTiBPerMonth, 18)} USDFC`);
         }
 
-        if (storageInfo.pricePerBytePerEpoch) {
-            const pricePerGB = Number(storageInfo.pricePerBytePerEpoch) * 1024 * 1024 * 1024;
-            console.log(`  Price per GB/epoch: ${pricePerGB.toExponential(4)} USDFC`);
+        if (storageInfo.serviceParameters?.minUploadSize !== undefined) {
+            console.log(`  Min Upload Size: ${storageInfo.serviceParameters.minUploadSize} bytes`);
         }
 
-        if (storageInfo.minPieceSizeBytes) {
-            console.log(`  Min Piece Size: ${storageInfo.minPieceSizeBytes} bytes`);
+        if (storageInfo.serviceParameters?.maxUploadSize !== undefined) {
+            console.log(`  Max Upload Size: ${formatBytes(storageInfo.serviceParameters.maxUploadSize)}`);
         }
 
-        if (storageInfo.maxPieceSizeBytes) {
-            console.log(`  Max Piece Size: ${formatBytes(Number(storageInfo.maxPieceSizeBytes))}`);
+        if (storageInfo.providers?.length > 0) {
+            console.log(`  Active Providers: ${storageInfo.providers.length}`);
         }
 
         console.log();
@@ -88,19 +103,20 @@ async function main() {
     console.log("=== Step 4: Operator Approval Status ===\n");
 
     try {
-        const operatorAddress = warmStorageAddress;
-        const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+        // serviceApproval() now takes an options object { service, token }
+        // instead of positional args (address, token)
+        const approval = await synapse.payments.serviceApproval({ service: warmStorageAddress });
 
         console.log("Storage Operator Approval:");
-        console.log(`  Operator: ${operatorAddress}`);
+        console.log(`  Operator: ${warmStorageAddress}`);
         console.log(`  Approved: ${approval.isApproved ? '✓ Yes' : '✗ No'}`);
 
         if (approval.rateAllowance !== undefined) {
-            console.log(`  Rate Allowance: ${ethers.formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
+            console.log(`  Rate Allowance: ${formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
         }
 
         if (approval.lockupAllowance !== undefined) {
-            console.log(`  Lockup Allowance: ${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`);
+            console.log(`  Lockup Allowance: ${formatUnits(approval.lockupAllowance, 18)} USDFC`);
         }
 
         if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
@@ -123,20 +139,21 @@ async function main() {
     console.log("=== Step 5: Payment Account Health ===\n");
 
     try {
-        const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-        const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-        const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+        // All payment methods now use options objects { token } instead of positional args.
+        const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
+        const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
+        const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
         console.log("Account Status:");
-        console.log(`  Wallet Balance (USDFC):  ${ethers.formatUnits(walletBalance, 18)} USDFC`);
-        console.log(`  Payment Account (USDFC): ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+        console.log(`  Wallet Balance (USDFC):  ${formatUnits(walletBalance, 18)} USDFC`);
+        console.log(`  Payment Account (USDFC): ${formatUnits(paymentBalance, 18)} USDFC`);
         console.log();
 
         console.log("Payment Account Details:");
-        console.log(`  Total Funds:     ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
-        console.log(`  Current Lockup:  ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
-        console.log(`  Lockup Rate:     ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
-        console.log(`  Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+        console.log(`  Total Funds:     ${formatUnits(accountInfo.funds, 18)} USDFC`);
+        console.log(`  Current Lockup:  ${formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
+        console.log(`  Lockup Rate:     ${formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
+        console.log(`  Available Funds: ${formatUnits(accountInfo.availableFunds, 18)} USDFC`);
         console.log(`  Last Settled:    Epoch ${accountInfo.lockupLastSettledAt}`);
         console.log();
 
@@ -201,16 +218,19 @@ async function main() {
 
     console.log("Building status object for dashboard integration...\n");
 
-    const currentBalance = await synapse.payments.balance(TOKENS.USDFC).catch(() => 0n);
+    const currentBalance = await synapse.payments.balance({ token: TOKENS.USDFC }).catch(() => 0n);
 
     const monitorStatus = {
         timestamp: new Date().toISOString(),
         network: {
-            name: 'Calibration Testnet',
+            chainId: synapse.chain.id,
+            name: synapse.chain.name,
             rpc: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
         },
         contracts: {
-            warmStorage: warmStorageAddress
+            warmStorage: warmStorageAddress,
+            payments: paymentsAddress,
+            pdpVerifier: pdpVerifierAddress
         },
         account: {
             healthy: Number(currentBalance) / 1e18 > 0.1,
@@ -236,8 +256,8 @@ async function main() {
     console.log(`
 async function monitorLoop(intervalMs = 60000) {
     while (true) {
-        const balance = await synapse.payments.balance(TOKENS.USDFC);
-        const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+        const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
+        const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
         
         // Check for alerts
         if (Number(balance) / 1e18 < 0.5) {
@@ -269,7 +289,8 @@ async function monitorLoop(intervalMs = 60000) {
     console.log("✅ Proof Monitoring Complete!\n");
 
     console.log("You learned:");
-    console.log("  • How to query contract addresses");
+    console.log("  • How to initialize the SDK with viem (privateKeyToAccount + Synapse.create)");
+    console.log("  • How to read contract addresses from synapse.chain.contracts");
     console.log("  • How to check storage service parameters");
     console.log("  • How to verify operator approval status");
     console.log("  • How to monitor payment account health");

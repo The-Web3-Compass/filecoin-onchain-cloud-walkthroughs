@@ -50,7 +50,9 @@ Create a file named `index.js` in the `code/` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http, formatUnits } from 'viem';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -61,34 +63,42 @@ We load environment variables with the same pattern used across all modules. The
 
 ### SDK Initialization
 
+The SDK now uses [viem](https://viem.sh/) for wallet management instead of a raw `privateKey` string. `privateKeyToAccount` converts your private key into a typed account object that viem's transaction machinery understands.
+
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: process.env.PRIVATE_KEY,
-    rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+
+// Synapse.create() is now synchronous — no await needed.
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+    account,
+    source: null
 });
 
-const chainId = synapse.getChainId();
+const chainId = synapse.chain.id;
+const chainName = synapse.chain.name;
 ```
 
-The `getChainId()` method returns the numeric chain identifier. For Calibration testnet, this is `314159`. For Filecoin mainnet, it would be `314`. This matters for monitoring because you want to ensure your application isn't accidentally querying the wrong network — a surprisingly common production bug.
+`synapse.chain.id` returns the numeric chain identifier — `314159` for Calibration testnet, `314` for mainnet. The `source` parameter scopes dataset namespacing; pass `null` to opt out of application isolation for this walkthrough.
 
 ## Step 2: Discovering Infrastructure Contracts
 
 ```javascript
 const contracts = {
-    warmStorage: synapse.getWarmStorageAddress(),
-    payments: synapse.getPaymentsAddress(),
-    pdpVerifier: synapse.getPDPVerifierAddress()
+    warmStorage: synapse.chain.contracts.fwss.address,
+    payments: synapse.chain.contracts.filecoinPay.address,
+    pdpVerifier: synapse.chain.contracts.pdpVerifier.address
 };
 ```
 
-These three methods return Ethereum-style addresses (0x...) for the key smart contracts in the Filecoin Onchain Cloud system:
+Contract addresses are now read directly from `synapse.chain.contracts` — the chain configuration object baked into the SDK. There are no longer separate getter methods like `getWarmStorageAddress()`.
 
-**Warm Storage Contract** (`getWarmStorageAddress()`): The main entry point for storage operations. When you uploaded data in previous modules, the SDK interacted with this contract. For monitoring, this address lets you track storage-related transactions in a block explorer.
+**Warm Storage Contract** (`fwss`): The FilecoinWarmStorageService contract. When you upload data, the SDK interacts with this contract. For monitoring, this address lets you track storage-related transactions in a block explorer.
 
-**Payments Contract** (`getPaymentsAddress()`): Manages USDFC deposits, withdrawals, and settlement between clients and providers. Monitoring transactions to this contract shows you payment flows — deposits, charges, and refunds.
+**Payments Contract** (`filecoinPay`): Manages USDFC deposits, withdrawals, and settlement between clients and providers. Monitoring transactions to this contract shows you payment flows — deposits, charges, and refunds.
 
-**PDP Verifier Contract** (`getPDPVerifierAddress()`): The contract that validates Proof of Data Possession submissions. When a provider proves they hold your data, the proof gets verified by this contract. Monitoring events from this contract gives you direct visibility into proof submission frequency and success rates.
+**PDP Verifier Contract** (`pdpVerifier`): Validates Proof of Data Possession submissions. When a provider proves they hold your data, the proof goes through this contract. Monitoring events from it gives direct visibility into proof submission frequency and success rates.
 
 In a production dashboard, you would link each address to a block explorer so operators can click through to see raw on-chain data.
 
@@ -96,62 +106,59 @@ In a production dashboard, you would link each address to a block explorer so op
 
 ```javascript
 try {
-    const storageInfo = await synapse.getStorageInfo();
+    // getStorageInfo() is now on synapse.storage, not on synapse directly.
+    const storageInfo = await synapse.storage.getStorageInfo();
 
-    if (storageInfo.pricePerBytePerEpoch) {
-        const pricePerGB = Number(storageInfo.pricePerBytePerEpoch) * 1024 * 1024 * 1024;
-        console.log(`Price per GB/epoch: ${pricePerGB.toExponential(4)} USDFC`);
+    if (storageInfo.pricing?.noCDN?.perTiBPerMonth) {
+        // Pricing is now per TiB per month, not per byte per epoch
+        console.log(`Price per TiB/month: ${formatUnits(storageInfo.pricing.noCDN.perTiBPerMonth, 18)} USDFC`);
     }
 
-    if (storageInfo.minPieceSizeBytes) {
-        console.log(`Min Piece Size: ${storageInfo.minPieceSizeBytes} bytes`);
+    if (storageInfo.serviceParameters?.minUploadSize !== undefined) {
+        console.log(`Min Upload Size: ${storageInfo.serviceParameters.minUploadSize} bytes`);
+    }
+
+    if (storageInfo.serviceParameters?.maxUploadSize !== undefined) {
+        console.log(`Max Upload Size: ${storageInfo.serviceParameters.maxUploadSize} bytes`);
     }
 } catch (error) {
-    console.log("Storage info not available via SDK, using defaults.");
+    console.log("Storage info not available, using defaults.");
 }
 ```
 
-The `getStorageInfo()` method retrieves current service configuration from the smart contract. This information changes over time as the network adjusts pricing and capacity.
+`getStorageInfo()` is now a method on `synapse.storage` (the `StorageManager`), not on the `Synapse` instance directly. The response structure has also changed significantly:
 
-**Price Per Byte Per Epoch**: Storage costs on Filecoin are denominated per byte per epoch (one epoch = 30 seconds). We convert this to a per-GB rate for readability. In a dashboard, you would display this alongside your current data volume to project monthly costs.
+**Pricing**: Previously expressed as `pricePerBytePerEpoch`, pricing is now `pricing.noCDN.perTiBPerMonth` — per tebibyte per month. This is more readable and directly comparable to cloud storage pricing. The `pricing.withCDN` fields cover CDN-enabled storage (CDN egress charges are usage-based on top of base storage).
 
-**Size Constraints**: Minimum piece size is 127 bytes (smaller data cannot generate valid PieceCIDs). Maximum is typically 200 MiB through the SDK. These constraints affect how you architect data pipelines — files outside these bounds need splitting or padding.
+**Size Constraints**: `serviceParameters.minUploadSize` and `serviceParameters.maxUploadSize` replace the former `minPieceSizeBytes` / `maxPieceSizeBytes`. Minimum is 127 bytes; maximum is typically around 200 MiB.
 
 Note the `try/catch` — on testnet, some API methods may not return all fields. Defensive coding prevents your monitor from crashing when optional data is missing.
 
 ## Step 4: Provider Status
 
 ```javascript
-const providerAddress = contracts.warmStorage;
+// List providers from the storage service info
+const storageInfo = await synapse.storage.getStorageInfo();
 
-try {
-    const providerInfo = await synapse.getProviderInfo(providerAddress);
-
-    if (providerInfo.faultySectorCount !== undefined) {
-        console.log(`Faulty Sectors: ${providerInfo.faultySectorCount}`);
-    }
-
-    if (providerInfo.activeSectorCount !== undefined) {
-        console.log(`Active Sectors: ${providerInfo.activeSectorCount}`);
-    }
-} catch (error) {
-    console.log("Provider info query returned error (expected on testnet).");
+for (const provider of storageInfo.providers) {
+    console.log(`Provider ID: ${provider.providerId}`);
+    console.log(`  Address:  ${provider.serviceProvider}`);
+    console.log(`  PDP URL:  ${provider.pdpUrl}`);
 }
 ```
 
-The `getProviderInfo()` method queries on-chain data about a storage provider. The response includes sector counts and proof statistics that form the basis of a **reliability score**.
+`getStorageInfo()` returns a `providers` array of approved storage providers. Each `PDPProvider` object includes the provider's on-chain address and their PDP (Proof of Data Possession) endpoint URL.
 
-**Active Sectors** represent data the provider is currently storing and proving. More active sectors generally indicate a more established provider.
+For deeper provider analytics — fault counts, sector history, proof success rates — you need an off-chain indexer (subgraph). The SDK no longer bundles a `SubgraphService`, but Walkthrough 2 explains your options for historical data.
 
-**Faulty Sectors** represent data where the provider missed a proof deadline. A non-zero faulty count isn't necessarily catastrophic — providers can recover faulted sectors. But a *rising* fault count signals problems. In your dashboard, track this over time and alert when it increases.
-
-**Reliability Score Calculation**: The code includes a pattern for computing `(successfulProofs / totalProofs) * 100`. In practice, you would calculate this from historical proof events rather than a single API call. A provider with 99.5%+ reliability is considered healthy. Below 98%  warrants investigation. Below 95% is a serious concern.
+**Reliability Score Calculation**: A provider with 99.5%+ proof success rate is considered healthy; below 95% warrants investigation. In the absence of a subgraph, you can approximate health by checking whether `storageInfo.allowances.isApproved` is true and monitoring your own payment drain rate over time.
 
 ## Step 5: Payment Account Health
 
 ```javascript
-const balance = await synapse.payments.balance(TOKENS.USDFC);
-const accountInfo = await synapse.payments.accountInfo();
+// All payment methods now take an options object { token } instead of a positional arg.
+const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
+const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
 const balanceNumber = Number(balance) / 1e18;
 let healthStatus = "🟢 Healthy";
@@ -198,13 +205,13 @@ The code outputs a reference table of Filecoin's proof types:
 const monitorStatus = {
     timestamp: new Date().toISOString(),
     network: {
-        chainId: chainId,
-        name: chainId === 314159 ? 'Calibration' : 'Unknown'
+        chainId: synapse.chain.id,
+        name: synapse.chain.name
     },
     contracts: contracts,
     account: {
         healthy: true,
-        balance: await synapse.payments.balance(TOKENS.USDFC).then(b =>
+        balance: await synapse.payments.balance({ token: TOKENS.USDFC }).then(b =>
             (Number(b) / 1e18).toFixed(4)
         ).catch(() => "0.0000")
     },
@@ -229,17 +236,22 @@ In a production application, this object would be served via an API endpoint (e.
 ```javascript
 async function monitorLoop(intervalMs = 60000) {
     while (true) {
-        const status = await getMonitorStatus(synapse);
+        const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
+        const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
         // Check for alerts
-        if (status.account.balance < 0.5) {
+        if (Number(balance) / 1e18 < 0.5) {
             await sendAlert('Low balance warning');
         }
 
-        // Emit to dashboard
-        broadcastStatus(status);
+        // Calculate days remaining
+        if (accountInfo.lockupRate > 0n) {
+            const epochsLeft = accountInfo.availableFunds / accountInfo.lockupRate;
+            const daysLeft = Number(epochsLeft) / Number(TIME_CONSTANTS.EPOCHS_PER_DAY);
+            if (daysLeft < 7) await sendAlert('Critical: < 7 days remaining');
+        }
 
-        await sleep(intervalMs);
+        await new Promise(r => setTimeout(r, intervalMs));
     }
 }
 ```
@@ -271,33 +283,36 @@ Monitor your Filecoin storage proofs and provider status.
 
 === Step 1: SDK Initialization ===
 
-Connected to chain ID: 314159
-Network: Calibration Testnet
+✓ SDK initialized successfully
+  Connected to: Filecoin Calibration Testnet (chain ID: 314159)
 
 === Step 2: Core Contract Addresses ===
 
 Key Infrastructure Contracts:
-  Warm Storage:  0x6454...
-  Payments:      0x8c91...
-  PDP Verifier:  0x3b72...
-
-These contracts handle storage deals, payments, and proof verification.
+  Warm Storage (FWSS): 0x6454...
+  Payments:            0x8c91...
+  PDP Verifier:        0x3b72...
 
 === Step 5: Payment Account Health ===
 
 Account Status:
-  Wallet Balance: 4.5231 USDFC
-  Health Status: 🟢 Healthy
+  Wallet Balance (USDFC):  4.5231 USDFC
+  Payment Account (USDFC): 3.2100 USDFC
+
+  📊 Estimated Days Remaining: ~42.3 days
+  🟢 Healthy: Sufficient balance for continued storage.
+
+  Overall Health: 🟢 Healthy
 
 === Step 7: Monitor Status Object ===
 
 Status Object (JSON):
 {
   "timestamp": "2024-01-25T10:00:00.000Z",
-  "network": { "chainId": 314159, "name": "Calibration" },
-  "contracts": { ... },
-  "account": { "healthy": true, "balance": "4.5231" },
-  "proofSchedule": { ... }
+  "network": { "chainId": 314159, "name": "Filecoin Calibration Testnet" },
+  "contracts": { "warmStorage": "0x...", "payments": "0x...", "pdpVerifier": "0x..." },
+  "account": { "healthy": true, "paymentBalance": "3.2100" },
+  "proofSchedule": { "windowPoStPeriod": "24 hours", ... }
 }
 
 ✅ Proof Monitoring Complete!
@@ -323,9 +338,9 @@ If you use multiple storage providers (for redundancy, as discussed in the first
 
 Some SDK methods return objects with optional fields on testnet. Always check for `undefined` before accessing nested properties. The code uses `if (providerInfo.faultySectorCount !== undefined)` patterns for this reason.
 
-**"getStorageInfo() failed"**
+**"`getStorageInfo()` failed"**
 
-This method may not be available on all SDK versions or testnet configurations. The `try/catch` ensures the script continues even if this call fails. The remaining steps still provide useful monitoring data.
+This method lives on `synapse.storage`, not on `synapse`. Ensure you are calling `synapse.storage.getStorageInfo()`. The `try/catch` ensures the script continues even if this call fails. The remaining steps still provide useful monitoring data.
 
 **Very small or zero balance shown**
 

@@ -217,7 +217,9 @@ Create `index.js` in your `code` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import {
     initDatabase,
     createUser,
@@ -243,13 +245,16 @@ async function main() {
     console.log("Database initialized.\n");
 
     // Initialize Synapse SDK
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     // Verify backend is ready
-    const balance = await synapse.payments.balance(TOKENS.USDFC);
+    const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
     if (balance === 0n) {
         console.log("Backend payment account is empty.");
         process.exit(1);
@@ -402,7 +407,10 @@ Final quota status:
 The demo simulates payments. In production, verify payments on-chain:
 
 ```javascript
-import { ethers } from 'ethers';
+import { createPublicClient, http } from 'viem';
+import { base, arbitrum, polygon } from 'viem/chains';
+
+const L2_CHAINS = { base, arbitrum, polygon };
 
 const RPC_URLS = {
     base: 'https://mainnet.base.org',
@@ -411,27 +419,30 @@ const RPC_URLS = {
 };
 
 async function verifyPayment(txHash, chain, expectedAmount, paymentAddress) {
-    const provider = new ethers.JsonRpcProvider(RPC_URLS[chain]);
-    
-    const tx = await provider.getTransaction(txHash);
+    const client = createPublicClient({
+        chain: L2_CHAINS[chain],
+        transport: http(RPC_URLS[chain])
+    });
+
+    const tx = await client.getTransaction({ hash: txHash });
     if (!tx) return { verified: false, reason: 'Transaction not found' };
-    
-    const receipt = await provider.getTransactionReceipt(txHash);
-    if (!receipt || receipt.status !== 1) {
+
+    const receipt = await client.getTransactionReceipt({ hash: txHash });
+    if (!receipt || receipt.status !== 'success') {
         return { verified: false, reason: 'Transaction failed' };
     }
-    
+
     // For native token payments
-    if (tx.to.toLowerCase() === paymentAddress.toLowerCase()) {
+    if (tx.to?.toLowerCase() === paymentAddress.toLowerCase()) {
         const valueUSD = await convertToUSD(tx.value, chain);
         if (valueUSD >= expectedAmount) {
             return { verified: true, amountUSD: valueUSD };
         }
     }
-    
+
     // For ERC20 payments, parse transfer events
     // ... additional logic for USDC, USDT, etc.
-    
+
     return { verified: false, reason: 'Payment amount mismatch' };
 }
 ```

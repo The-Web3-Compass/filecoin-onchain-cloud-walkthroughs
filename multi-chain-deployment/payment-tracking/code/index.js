@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import {
     initDatabase,
     createUser,
@@ -45,13 +47,16 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in environment");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: backendKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(backendKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     // Verify backend is ready
-    const balance = await synapse.payments.balance(TOKENS.USDFC);
+    const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
     if (balance === 0n) {
         console.log("Backend payment account is empty. Fund it first.");
         process.exit(1);
@@ -59,8 +64,8 @@ async function main() {
     console.log(`Backend ready. Payment account: ${(Number(balance) / 1e18).toFixed(4)} USDFC\n`);
 
     // Verify operator approval
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
     if (!approval.isApproved) {
         console.log("Storage operator not approved. Run payment-management tutorial first.");
         process.exit(1);

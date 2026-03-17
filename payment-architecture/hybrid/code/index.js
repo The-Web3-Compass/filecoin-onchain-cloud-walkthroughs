@@ -1,9 +1,6 @@
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Simulated user database with quota tracking
 const USER_DATABASE = {
@@ -32,7 +29,7 @@ const USER_DATABASE = {
 
 /**
  * Hybrid Payment Architecture Demo
- * 
+ *
  * Combines treasury sponsorship with user payments.
  * Free tier users get sponsored. Power users pay directly.
  */
@@ -46,16 +43,22 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY");
     }
 
+    const formattedKey = privateKey.startsWith('0x')
+        ? privateKey
+        : `0x${privateKey}`;
+
+    const account = privateKeyToAccount(formattedKey);
+
     // Treasury context (dApp-Pays)
-    const treasury = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const treasury = Synapse.create({
+        account,
+        source: 'hybrid-demo-treasury'
     });
 
     // User context (User-Pays) - in production, comes from browser wallet
-    const userWallet = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const userWallet = Synapse.create({
+        account,
+        source: 'hybrid-demo-user'
     });
 
     console.log("=== System Initialization ===");
@@ -63,7 +66,7 @@ async function main() {
     console.log("User wallet SDK initialized (demo uses same key).");
     console.log("In production, user wallet comes from browser connection.\n");
 
-    const treasuryBalance = await treasury.payments.balance(TOKENS.USDFC);
+    const treasuryBalance = await treasury.payments.balance();
     console.log(`Treasury Balance: ${(Number(treasuryBalance) / 1e18).toFixed(4)} USDFC`);
 
     if (treasuryBalance === 0n) {
@@ -71,16 +74,21 @@ async function main() {
         process.exit(1);
     }
 
-    // Verify operator approval for treasury
-    const operatorAddress = treasury.getWarmStorageAddress();
-    const approval = await treasury.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    // Verify treasury payment readiness
+    const sampleSize = BigInt(200); // minimum check size
+    const treasuryPrep = await treasury.storage.prepare({ dataSize: sampleSize });
 
-    if (!approval.isApproved || approval.rateAllowance === 0n) {
+    if (!treasuryPrep.costs.ready && treasuryPrep.transaction) {
+        console.log("Setting up treasury payment approval (one-time setup)...");
+        const { hash } = await treasuryPrep.transaction.execute();
+        await treasury.client.waitForTransactionReceipt({ hash });
+        console.log("Treasury approved.\n");
+    } else if (!treasuryPrep.costs.ready) {
         console.log("Treasury operator not approved. Run payment-management first.");
         process.exit(1);
     }
 
-    console.log("Treasury operator approved.\n");
+    console.log("Treasury ready.\n");
     console.log("=".repeat(60) + "\n");
 
     // Scenario 1: Free user within quota (Alice)
@@ -175,6 +183,7 @@ async function executeSponsoredUpload(treasury, userId, fileSize) {
 
         console.log("Upload successful (Treasury sponsored)");
         console.log(`PieceCID: ${result.pieceCid}`);
+        console.log(`Copies stored: ${result.copies.length}`);
         console.log(`Payer: Treasury`);
 
         USER_DATABASE[userId].storageUsed += fileSize;
@@ -189,7 +198,7 @@ async function executeUserPaidUpload(userWallet, userId, fileSize, reason) {
     console.log("Executing USER_PAID upload (User pays)...");
     console.log(`Reason: ${reason}\n`);
 
-    const balance = await userWallet.payments.balance(TOKENS.USDFC);
+    const balance = await userWallet.payments.balance();
 
     if (balance === 0n) {
         console.log("User has no funds in payment account.");
@@ -211,6 +220,7 @@ async function executeUserPaidUpload(userWallet, userId, fileSize, reason) {
 
         console.log("Upload successful (User paid)");
         console.log(`PieceCID: ${result.pieceCid}`);
+        console.log(`Copies stored: ${result.copies.length}`);
         console.log(`Payer: User Wallet`);
 
         USER_DATABASE[userId].storageUsed += fileSize;

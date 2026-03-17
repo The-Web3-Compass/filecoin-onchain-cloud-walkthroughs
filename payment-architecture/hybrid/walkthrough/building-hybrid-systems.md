@@ -111,12 +111,9 @@ This logic generalizes to any quota dimension: storage size, file count, bandwid
 Create a file named `index.js` in your `code` directory:
 
 ```javascript
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Simulated user database with quota tracking
 const USER_DATABASE = {
@@ -153,16 +150,22 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY");
     }
 
+    const formattedKey = privateKey.startsWith('0x')
+        ? privateKey
+        : `0x${privateKey}`;
+
+    const account = privateKeyToAccount(formattedKey);
+
     // Treasury context (dApp-Pays)
-    const treasury = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const treasury = Synapse.create({
+        account,
+        source: 'hybrid-demo-treasury'
     });
 
     // User context (User-Pays) - in production, comes from browser wallet
-    const userWallet = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const userWallet = Synapse.create({
+        account,
+        source: 'hybrid-demo-user'
     });
 
     console.log("=== System Initialization ===");
@@ -170,7 +173,7 @@ async function main() {
     console.log("User wallet SDK initialized (demo uses same key).");
     console.log("In production, user wallet comes from browser connection.\n");
 
-    const treasuryBalance = await treasury.payments.balance(TOKENS.USDFC);
+    const treasuryBalance = await treasury.payments.balance();
     console.log(`Treasury Balance: ${(Number(treasuryBalance) / 1e18).toFixed(4)} USDFC`);
 
     if (treasuryBalance === 0n) {
@@ -178,17 +181,22 @@ async function main() {
         process.exit(1);
     }
 
-    // Verify operator approval for treasury
-    const operatorAddress = treasury.getWarmStorageAddress();
-    const approval = await treasury.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    // Verify treasury payment readiness
+    const sampleSize = BigInt(200); // minimum check size
+    const treasuryPrep = await treasury.storage.prepare({ dataSize: sampleSize });
 
-    if (!approval.isApproved || approval.rateAllowance === 0n) {
+    if (!treasuryPrep.costs.ready && treasuryPrep.transaction) {
+        console.log("Setting up treasury payment approval (one-time setup)...");
+        const { hash } = await treasuryPrep.transaction.execute();
+        await treasury.client.waitForTransactionReceipt({ hash });
+        console.log("Treasury approved.\n");
+    } else if (!treasuryPrep.costs.ready) {
         console.log("Treasury operator not approved. Run payment-management first.");
         process.exit(1);
     }
 
-    // Demo: Process uploads for different user scenarios
-    console.log("\n" + "=".repeat(60) + "\n");
+    console.log("Treasury ready.\n");
+    console.log("=".repeat(60) + "\n");
 
     // Scenario 1: Free user within quota (Alice)
     await processUpload(treasury, userWallet, "alice", 50 * 1024 * 1024);
@@ -206,7 +214,7 @@ async function main() {
 
 async function processUpload(treasury, userWallet, userId, fileSize) {
     console.log(`=== Processing Upload for ${userId} ===\n`);
-    
+
     const user = USER_DATABASE[userId];
     if (!user) {
         console.log("User not found.");
@@ -244,7 +252,7 @@ function evaluatePaymentPath(user, requestedSize) {
 
     // Rule 2: Check if request fits within free quota
     const remainingQuota = user.storageLimit - user.storageUsed;
-    
+
     if (requestedSize <= remainingQuota) {
         return {
             path: "SPONSORED",
@@ -284,11 +292,12 @@ async function executeSponsoredUpload(treasury, userId, fileSize) {
 
         console.log("Upload successful (Treasury sponsored)");
         console.log(`PieceCID: ${result.pieceCid}`);
+        console.log(`Copies stored: ${result.copies.length}`);
         console.log(`Payer: Treasury`);
 
         USER_DATABASE[userId].storageUsed += fileSize;
         console.log(`Updated usage: ${formatBytes(USER_DATABASE[userId].storageUsed)}`);
-        
+
     } catch (error) {
         console.error("Sponsored upload failed:", error.message);
     }
@@ -297,10 +306,10 @@ async function executeSponsoredUpload(treasury, userId, fileSize) {
 async function executeUserPaidUpload(userWallet, userId, fileSize, reason) {
     console.log("Executing USER_PAID upload (User pays)...");
     console.log(`Reason: ${reason}\n`);
-    
+
     // Check if user can afford the operation
-    const balance = await userWallet.payments.balance(TOKENS.USDFC);
-    
+    const balance = await userWallet.payments.balance();
+
     if (balance === 0n) {
         console.log("User has no funds in payment account.");
         console.log("In production, prompt user to fund their account.");
@@ -321,11 +330,12 @@ async function executeUserPaidUpload(userWallet, userId, fileSize, reason) {
 
         console.log("Upload successful (User paid)");
         console.log(`PieceCID: ${result.pieceCid}`);
+        console.log(`Copies stored: ${result.copies.length}`);
         console.log(`Payer: User Wallet`);
 
         USER_DATABASE[userId].storageUsed += fileSize;
         console.log(`Updated usage: ${formatBytes(USER_DATABASE[userId].storageUsed)}`);
-        
+
     } catch (error) {
         console.error("User-paid upload failed:", error.message);
     }
@@ -362,14 +372,18 @@ This script demonstrates the complete Hybrid workflow with quota evaluation and 
 ### Dual Context Initialization
 
 ```javascript
-const treasury = await Synapse.create({
-    privateKey: privateKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+const account = privateKeyToAccount(formattedKey);
+
+// Treasury context (dApp-Pays)
+const treasury = Synapse.create({
+    account,
+    source: 'hybrid-demo-treasury'
 });
 
-const userWallet = await Synapse.create({
-    privateKey: privateKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+// User context (User-Pays) - in production, comes from browser wallet
+const userWallet = Synapse.create({
+    account,
+    source: 'hybrid-demo-user'
 });
 ```
 
@@ -378,9 +392,11 @@ Hybrid architecture requires two SDK contexts:
 1. **Treasury** - Your application's wallet for sponsored operations
 2. **User Wallet** - The user's wallet for direct payments
 
+`Synapse.create()` is now synchronous — no `await` needed. Both instances share the same `account` object here for testing simplicity, but they have **different `source` values**. The `source` string controls dataset namespacing on-chain, so treasury-sponsored uploads and user-paid uploads remain organized into separate data sets even when using the same wallet.
+
 In production, these would be distinct:
-- Treasury key stored securely in your backend
-- User wallet connected via browser (MetaMask, WalletConnect)
+- Treasury key stored securely in your backend, initialized at startup
+- User wallet account obtained via browser connection (MetaMask, WalletConnect)
 
 For this demo, we use the same key for both to simplify testing.
 
@@ -488,11 +504,12 @@ This model combines treasury sponsorship with user payments.
 Free tier users get sponsored. Power users pay directly.
 
 === System Initialization ===
-Treasury: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
-User Wallet (demo): 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
+Treasury SDK initialized.
+User wallet SDK initialized (demo uses same key).
 In production, user wallet comes from browser connection.
 
 Treasury Balance: 5.0000 USDFC
+Treasury ready.
 
 ============================================================
 
@@ -509,7 +526,8 @@ Reason: Within free tier quota - treasury sponsors
 Executing SPONSORED upload (Treasury pays)...
 Upload successful (Treasury sponsored)
 PieceCID: bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq
-Payer: Treasury (0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1)
+Copies stored: 1
+Payer: Treasury
 Updated usage: 250 MB
 
 ============================================================
@@ -527,7 +545,8 @@ Reason: Over free quota - user wallet available for payment
 Executing USER_PAID upload (User pays)...
 Upload successful (User paid)
 PieceCID: bafkzcibca4nnt63cz5ywzqj8eo73fp2nqq6qxm7fn7guz3dxm6d48gn3lb
-Payer: User (0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1)
+Copies stored: 1
+Payer: User Wallet
 Updated usage: 510 MB
 
 ============================================================
@@ -545,7 +564,8 @@ Reason: Pro/Enterprise tier - user pays for all storage
 Executing USER_PAID upload (User pays)...
 Upload successful (User paid)
 PieceCID: bafkzcibca5oou74d06zxzrk9fp84gq3orr7ryn8go8hvz4eyn7e59ho4mc
-Payer: User (0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1)
+Copies stored: 1
+Payer: User Wallet
 Updated usage: 10.1 GB
 ```
 
@@ -571,7 +591,7 @@ async function upgradeUser(userId) {
     }
     
     // Verify user can afford Pro tier
-    const balance = await userWallet.payments.balance(TOKENS.USDFC);
+    const balance = await userWallet.payments.balance();
     const minimumBalance = BigInt(10e18); // 10 USDFC minimum
     
     if (balance < minimumBalance) {

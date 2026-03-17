@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TIME_CONSTANTS, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Payment Rails Visualization\n");
@@ -11,20 +11,22 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'payment-rails'
     });
 
     console.log("✓ SDK initialized\n");
 
     try {
-        // Get all payment rails where user is the payer
-        const payerRails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+        // Get all payment rails where user is the payer (USDFC is the default token)
+        const payerRails = await synapse.payments.getRailsAsPayer();
 
         if (payerRails.length === 0) {
             console.log("No active payment rails found.");
-            console.log("  → Payment rails are created when you upload data");
+            console.log("  → Payment rails are created automatically when you upload data");
             console.log("  → Complete the 'first-upload' tutorial to create rails\n");
         } else {
             console.log(`Found ${payerRails.length} payment rail(s):\n`);
@@ -33,7 +35,6 @@ async function main() {
                 console.log(`Rail ID: ${rail.railId}`);
                 console.log(`  Status: ${rail.isTerminated ? '✗ Terminated' : '✓ Active'}`);
 
-                // Display addresses with defensive null checks
                 if (rail.from) {
                     console.log(`  Payer: ${rail.from.substring(0, 10)}...${rail.from.substring(rail.from.length - 8)}`);
                 }
@@ -47,7 +48,7 @@ async function main() {
                 }
 
                 if (rail.paymentRate) {
-                    console.log(`  Payment Rate: ${ethers.formatUnits(rail.paymentRate, 18)} USDFC/epoch`);
+                    console.log(`  Payment Rate: ${formatUnits(rail.paymentRate)} USDFC/epoch`);
                 }
 
                 if (rail.lockupPeriod) {
@@ -66,16 +67,13 @@ async function main() {
                 console.log();
             }
 
-            // Get detailed info for the first rail
-            if (payerRails.length > 0 && payerRails[0].railId) {
+            // Get detailed info for the first rail using object param
+            if (payerRails.length > 0 && payerRails[0].railId != null) {
                 console.log("Detailed Information for First Rail:");
-                const railDetails = await synapse.payments.getRail(payerRails[0].railId);
+                const railDetails = await synapse.payments.getRail({ railId: payerRails[0].railId });
 
                 console.log(`  Token: ${railDetails.token}`);
                 console.log(`  Commission Rate: ${railDetails.commissionRateBps} basis points`);
-                if (railDetails.serviceFeeRecipient && railDetails.serviceFeeRecipient !== ethers.ZeroAddress) {
-                    console.log(`  Fee Recipient: ${railDetails.serviceFeeRecipient}`);
-                }
                 console.log();
             }
 

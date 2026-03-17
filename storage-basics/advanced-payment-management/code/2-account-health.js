@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TIME_CONSTANTS, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Account Health Monitoring\n");
@@ -11,29 +11,31 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'account-health'
     });
 
     console.log("✓ SDK initialized\n");
 
-    // Get detailed account information
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    // Get detailed account information (USDFC is the default token)
+    const accountInfo = await synapse.payments.accountInfo();
 
     console.log("Account Details:");
-    console.log(`  Total Funds: ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
+    console.log(`  Total Funds: ${formatUnits(accountInfo.funds)} USDFC`);
     console.log(`    → All tokens deposited in payment account\n`);
 
-    console.log(`  Current Lockup: ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
+    console.log(`  Current Lockup: ${formatUnits(accountInfo.lockupCurrent)} USDFC`);
     console.log(`    → Funds currently locked for active storage deals`);
     console.log(`    → This is your safety buffer for providers\n`);
 
-    console.log(`  Lockup Rate: ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
+    console.log(`  Lockup Rate: ${formatUnits(accountInfo.lockupRate)} USDFC/epoch`);
     console.log(`    → How much gets locked per epoch for your storage`);
     console.log(`    → 1 epoch ≈ 30 seconds\n`);
 
-    console.log(`  Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+    console.log(`  Available Funds: ${formatUnits(accountInfo.availableFunds)} USDFC`);
     console.log(`    → Funds you can withdraw right now`);
     console.log(`    → Formula: Total Funds - Lockup Requirement\n`);
 

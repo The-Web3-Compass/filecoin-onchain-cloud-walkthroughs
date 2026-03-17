@@ -98,7 +98,8 @@ Create a file named `index.js` in the `code/` directory:
 
 ```javascript
 import 'dotenv/config';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 import { readFileSync, readdirSync } from 'fs';
 
 async function main() {
@@ -110,9 +111,11 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'datasets-tutorial'
     });
 
     console.log("✓ SDK initialized\\n");
@@ -120,7 +123,7 @@ async function main() {
     // Step 1: Verify Payment Account and Allowances
     console.log("=== Step 1: Verify Payment Account ===" );
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance();
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
 
     if (paymentBalance === 0n) {
@@ -128,8 +131,7 @@ async function main() {
         process.exit(1);
     }
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const approval = await synapse.payments.serviceApproval();
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("⚠️  Warning: Operator allowances are not set!");
@@ -214,7 +216,7 @@ This script demonstrates the complete dataset workflow with clear logging at eac
 ### Payment Account Verification
 
 ```javascript
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const paymentBalance = await synapse.payments.balance();
 
 if (paymentBalance === 0n) {
     console.log("\\n⚠️  Warning: Payment account has no balance!");
@@ -229,8 +231,7 @@ The balance check uses BigInt (note the `0n` syntax) because blockchain token am
 ### Allowance Verification
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const approval = await synapse.payments.serviceApproval();
 
 if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
     console.log("⚠️  Warning: Operator allowances are not set!");
@@ -238,9 +239,9 @@ if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllo
 }
 ```
 
-We also verify that the storage operator has permission to charge your account. This defensive check catches configuration issues before attempting uploads.
+We also verify that the storage operator has permission to charge your account. This defensive check catches configuration issues before attempting uploads. `serviceApproval()` takes no arguments — the SDK automatically resolves the WarmStorage operator address.
 
-The `serviceApproval()` method returns an object with `isApproved`, `rateAllowance`, and `lockupAllowance` fields. All three must be properly set for uploads to succeed.
+The method returns an object with `isApproved`, `rateAllowance`, and `lockupAllowance` fields. All three must be properly set for uploads to succeed.
 
 ### Creating a Storage Context
 
@@ -409,7 +410,7 @@ You can create your own sample files or use these examples:
 **notes.md**: A markdown file with technical notes (~750 bytes)
 **data.csv**: A CSV file with sample data (~250 bytes)
 
-These files demonstrate that datasets can contain different file types and formats. Total size should be approximately 2-3 KB, well within Filecoin's constraints (127 bytes minimum, 200 MiB maximum per file).
+These files demonstrate that datasets can contain different file types and formats. Total size should be approximately 2-3 KB, well within Filecoin's constraints (127 bytes minimum, ~1 GiB maximum per file).
 
 > [!TIP]
 > The sample files are provided in the tutorial repository at `datasets/data/`. You can copy them to your `code/data/` directory, or create your own files to upload.
@@ -655,7 +656,7 @@ Verify your metadata is properly formatted and retry after a few minutes.
 ### Upload fails for specific files
 
 Individual file uploads can fail due to:
-- File size violations (< 127 bytes or > 200 MiB)
+- File size violations (< 127 bytes or > ~1 GiB)
 - Provider capacity issues
 - Network timeouts
 - Insufficient payment account balance

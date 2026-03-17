@@ -85,7 +85,9 @@ Create `index.js` in your `code` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -118,9 +120,12 @@ async function main() {
     console.log("NFT Metadata Storage Demo\n");
 
     // Initialize SDK
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     const metadataIndex = [];
@@ -230,39 +235,41 @@ NFT contracts need an HTTP endpoint. Create `server.js`:
 ```javascript
 import dotenv from 'dotenv';
 import express from 'express';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const app = express();
-let synapse;
 
-// Initialize SDK on startup
-async function initSDK() {
-    synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
-    });
-}
+// Initialize SDK on startup (synchronous)
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+    account,
+    source: null
+});
 
 // Serve metadata by token ID
 app.get('/api/metadata/:tokenId', async (req, res) => {
     const tokenId = parseInt(req.params.tokenId);
-    
+
     // Look up PieceCID from database (demo uses hardcoded mapping)
     const pieceCidMap = {
         1: 'bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq',
         2: 'bafkzcibca4nnt63cy5xvzpi8en73fp73yopp6qwsy8ho7guy3dym6d58go3lr'
     };
-    
+
     const pieceCid = pieceCidMap[tokenId];
     if (!pieceCid) {
         return res.status(404).json({ error: 'Token not found' });
     }
-    
+
     try {
-        const data = await synapse.storage.download(pieceCid);
+        const data = await synapse.storage.download({ pieceCid });
         const metadata = JSON.parse(data.toString());
         res.json(metadata);
     } catch (error) {
@@ -273,21 +280,19 @@ app.get('/api/metadata/:tokenId', async (req, res) => {
 // Upload new metadata
 app.post('/api/upload', express.json(), async (req, res) => {
     const { metadata } = req.body;
-    
+
     const jsonString = JSON.stringify(metadata, null, 2);
     const buffer = Buffer.from(jsonString + " ".repeat(Math.max(0, 128 - jsonString.length)));
-    
+
     const result = await synapse.storage.upload(buffer);
-    
+
     res.json({
         pieceCid: result.pieceCid.toString(),
         size: result.size
     });
 });
 
-initSDK().then(() => {
-    app.listen(3000, () => console.log('NFT Metadata API on port 3000'));
-});
+app.listen(3000, () => console.log('NFT Metadata API on port 3000'));
 ```
 
 Run the server:

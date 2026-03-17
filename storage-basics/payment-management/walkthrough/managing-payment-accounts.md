@@ -49,8 +49,8 @@ Create a file named `index.js` in your project directory:
 
 ```javascript
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Managing Filecoin Payment Accounts...\n");
@@ -61,102 +61,69 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'payment-management'
     });
 
     console.log("✓ SDK initialized\n");
 
     // Check wallet balance
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance();
 
-    // Step 1: Define deposit parameters
+    // Step 1: Define storage size requirements
     console.log("=== Step 1: Configure Deposit Parameters ===");
 
-    const depositAmount = ethers.parseUnits("5.0", 18);
-    console.log(`Deposit Amount: ${ethers.formatUnits(depositAmount, 18)} USDFC`);
+    // Let's pretend we want to store 5 TiB of data
+    // 5 TiB = 5 * 1024 * 1024 * 1024 * 1024 bytes
+    const targetDataSize = BigInt(5 * 1024 * 1024 * 1024 * 1024);
+    console.log(`Target Data Size: 5 TiB`);
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    console.log(`Operator Address: ${operatorAddress}`);
+    // The SDK automatically calculates the exact deposit needed
+    // based on the size of the data you intend to upload
+    const prep = await synapse.storage.prepare({
+        dataSize: targetDataSize,
+    });
 
-    const rateAllowance = ethers.MaxUint256;
-    console.log(`Rate Allowance: Unlimited (${rateAllowance})`);
-
-    const lockupAllowance = ethers.MaxUint256;
-    console.log(`Lockup Allowance: Unlimited (${lockupAllowance})`);
-
-    const lockupPeriod = TIME_CONSTANTS.EPOCHS_PER_MONTH;
-    const lockupDays = Number(lockupPeriod / TIME_CONSTANTS.EPOCHS_PER_DAY);
-    console.log(`Lockup Period: ${lockupPeriod} epochs (~${lockupDays} days)\n`);
+    console.log(`Total Value Required: ${prep.costs.depositNeeded} raw units of USDFC (wei)`);
+    console.log(`Payment Status: ${prep.costs.ready ? 'Ready to upload' : 'Deposit required'}\n`);
 
     // Step 2: Validate sufficient balance
     console.log("=== Step 2: Validate Balance ===");
-    if (walletBalance < depositAmount) {
+    if (walletBalance < prep.costs.depositNeeded) {
         throw new Error(
-            `Insufficient balance. Required: ${ethers.formatUnits(depositAmount, 18)} USDFC, ` +
-            `Available: ${ethers.formatUnits(walletBalance, 18)} USDFC`
+            `Insufficient balance. Required: ${prep.costs.depositNeeded} USDFC (wei), ` +
+            `Available: ${walletBalance} USDFC (wei)`
         );
     }
     console.log("✓ Sufficient USDFC balance confirmed\n");
 
     // Step 3: Execute deposit and approval
     console.log("=== Step 3: Deposit and Approve Operator ===");
-    console.log("Submitting transaction...");
 
-    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-        depositAmount,
-        operatorAddress,
-        rateAllowance,
-        lockupAllowance,
-        lockupPeriod
-    );
-
-    console.log(`Transaction Hash: ${tx.hash}`);
-    console.log("Waiting for confirmation...");
-
-    const receipt = await tx.wait();
-    console.log(`✓ Transaction confirmed in block ${receipt.blockNumber}\n`);
+    // `prepare` returns a single transaction that handles deposit + approval.
+    // If your account is already funded, `transaction` will be null.
+    if (prep.transaction) {
+        console.log("Submitting payment and approval transaction...");
+        const { hash } = await prep.transaction.execute();
+        console.log(`Transaction Hash: ${hash}`);
+        console.log("Waiting for confirmation...");
+        await synapse.client.waitForTransactionReceipt({ hash });
+        console.log(`✓ Payment transaction confirmed\n`);
+    } else {
+        console.log(`✓ Payment already setup! No transactions required.\n`);
+    }
 
     // Step 4: Verify payment account balance
     console.log("=== Step 4: Verify Payment Account Balance ===");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Payment Account Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+    const paymentBalance = await synapse.payments.balance();
+    console.log(`Payment Account Balance: ${paymentBalance.toString()} USDFC (wei)`);
 
-    const updatedWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-    console.log(`Wallet Balance: ${ethers.formatUnits(updatedWalletBalance, 18)} USDFC\n`);
-
-    // Step 5: Check operator allowances
-    console.log("=== Step 5: Check Operator Allowances ===");
-
-    const allowance = await synapse.payments.allowance(
-        operatorAddress,
-        TOKENS.USDFC
-    );
-
-    // Format rate allowance with null check
-    let rateAllowanceDisplay;
-    if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
-        rateAllowanceDisplay = 'Not set';
-    } else if (allowance.rateAllowance === ethers.MaxUint256) {
-        rateAllowanceDisplay = 'Unlimited';
-    } else {
-        rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
-    }
-
-    // Format lockup allowance with null check
-    let lockupAllowanceDisplay;
-    if (allowance.lockupAllowance === null || allowance.lockupAllowance === undefined) {
-        lockupAllowanceDisplay = 'Not set';
-    } else if (allowance.lockupAllowance === ethers.MaxUint256) {
-        lockupAllowanceDisplay = 'Unlimited';
-    } else {
-        lockupAllowanceDisplay = `${ethers.formatUnits(allowance.lockupAllowance, 18)} USDFC`;
-    }
-
-    console.log(`Rate Allowance: ${rateAllowanceDisplay}`);
-    console.log(`Lockup Allowance: ${lockupAllowanceDisplay}`);
+    const updatedWalletBalance = await synapse.payments.walletBalance();
+    console.log(`Wallet Balance: ${updatedWalletBalance.toString()} USDFC (wei)\n`);
 
     console.log("\n✅ Payment setup complete! Your account is ready for storage operations.");
 }
@@ -168,152 +135,54 @@ main().catch((err) => {
 });
 ```
 
-This script demonstrates five key operations that give you complete visibility into payment account management. Each console log group corresponds to a distinct operation worth understanding individually.
+This script demonstrates four key operations that give you complete visibility into payment account management. Each console log group corresponds to a distinct operation worth understanding individually.
 
 ## Understanding the Code
 
 ### Wallet Balance vs Payment Account Balance
 
 ```javascript
-const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+const walletBalance = await synapse.payments.walletBalance();
 ```
 
 This retrieves your wallet's USDFC balance, which represents tokens you control directly through your private key. This is distinct from your payment account balance, which exists in the payment contract.
 
 The distinction matters because only wallet balance can be used for arbitrary transactions. Payment account balance is locked into the payment system and can only be used for storage payments or withdrawn back to your wallet through specific operations.
 
-### Deposit Amount Considerations
+### Understanding `prepare()`
 
 ```javascript
-const depositAmount = ethers.parseUnits("5.0", 18);
+const prep = await synapse.storage.prepare({
+    dataSize: targetDataSize
+});
 ```
 
-Choosing an appropriate deposit amount involves balancing several factors. Depositing too little means you will need to perform additional deposit transactions frequently, which wastes gas. Depositing too much ties up funds in the payment account that could be used elsewhere.
+Choosing an appropriate deposit amount historically involved balancing several complex factors, calculating epochs, and factoring in the varying operator limits manually. With Synapse SDK `v0.37.0+`, this complexity is handled for you by `synapse.storage.prepare()`.
 
-For testnet experimentation, the actual amount matters little since tokens are free. For production deployments, you should calculate this based on your anticipated storage needs. The [storage calculator](https://docs.filecoin.cloud/developer-guides/storage/storage-costs/#detailed-calculator-guide) provides precise estimates based on data volume and duration.
+You simply tell it how much data you intend to store (`dataSize`), and it returns:
+1. `costs`: An object detailing EXACTLY how much USDFC is required (`depositNeeded`), the current `ready` status of your payment account, and the calculated `rate`.
+2. `transaction`: A single prepared transaction object (deposit + approval combined). If your payment account is already funded adequately, `transaction` will be `null`.
 
-Current Calibration pricing is approximately 2.5 USDFC per TiB per month for Warm Storage. If you plan to store 10 TiB for three months, you would need approximately 75 USDFC plus a buffer for variations in storage operator pricing.
+Current Calibration pricing is approximately 2.5 USDFC per TiB per month for Warm Storage. The SDK natively understands this and factors in your `dataSize` to determine what's required.
 
-### The Operator Address
+### Transaction Execution
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
+if (prep.transaction) {
+    const { hash } = await prep.transaction.execute();
+// ...
 ```
 
-This returns the address of the Warm Storage operator maintained by the Filecoin Onchain Cloud team. Warm Storage optimizes for frequently accessed data and provides fast retrieval times.
-
-Filecoin also offers Cold Storage for archival data that you rarely need to access. Cold Storage costs less but retrieval takes longer. The operator you choose depends on your data access patterns. If users regularly download files from your application, Warm Storage makes sense. If you are storing compliance records or backups that you hope never to access, Cold Storage may be more economical.
-
-The operator address is critical because you are granting this address permission to charge your payment account. You should only approve operators you trust. The Warm Storage operator is maintained by the Filecoin Onchain Cloud team and undergoes regular security audits, but you should perform your own due diligence for any operator you approve.
-
-### Rate Allowance
-
-```javascript
-const rateAllowance = ethers.MaxUint256;
-```
-
-The rate allowance limits how much an operator can charge per epoch. An epoch on Filecoin lasts 30 seconds, so rate allowance controls the maximum charge every 30 seconds.
-
-Setting this to `ethers.MaxUint256` (unlimited) might seem reckless, but it is actually safe when combined with other protections. Operators cannot charge arbitrary amounts. They can only charge for storage you actively use based on cryptographically verified proofs. If you store 1 GiB, the operator can only charge for 1 GiB even with unlimited rate allowance.
-
-The unlimited setting simply means you will not accidentally block legitimate charges due to rate limits. If you stored 100 TiB and the epoch charge exceeds your rate allowance, the payment would fail and you could lose access to your data. Unlimited prevents this scenario.
-
-You could set a specific rate limit if you want an absolute ceiling on charges per epoch. This might make sense if you are experimenting and want to ensure you cannot accidentally be charged more than expected. For production deployments with validated storage amounts, unlimited is typically the correct choice.
-
-### Lockup Allowance
-
-```javascript
-const lockupAllowance = ethers.MaxUint256;
-```
-
-The lockup allowance limits the total amount that can be locked for storage deals. When an operator stores your data, they lock a portion of your payment account balance for the deal duration. This guarantees they receive payment for maintaining the storage.
-
-Setting this to unlimited means operators can lock your entire payment account balance if needed. This is safe because:
-
-1. Locked funds are still your funds. They cannot be taken, only temporarily reserved.
-2. You can only store as much data as your payment account can fund. Operators cannot lock arbitrary amounts.
-3. Locked funds unlock automatically when the storage deal period expires.
-
-If you set a lower lockup allowance, you might prevent yourself from using your full payment account balance. For example, if you deposit 100 USDFC but set a 50 USDFC lockup allowance, you could only use half your deposit for storage deals. There is rarely a reason to constrain this.
-
-### Lockup Period
-
-```javascript
-const lockupPeriod = TIME_CONSTANTS.EPOCHS_PER_MONTH;
-```
-
-The lockup period determines how long funds remain locked per storage deal. Setting this to one month means each storage deal locks funds for 30 days.
-
-This matters more than it might initially appear. A longer lockup period means your funds remain committed for longer. If you want to withdraw funds from your payment account, you must wait for locked amounts to unlock. A 6-month lockup period means potentially waiting 6 months to access those funds.
-
-However, shorter lockup periods create overhead. When a lockup expires, the storage deal must be renewed, which involves some onchain operations. Very short lockup periods mean constant renewals.
-
-For most applications, 30 days strikes a reasonable balance between flexibility and operational efficiency. If you are certain your storage needs are long-term, you could extend this to 3-6 months to reduce renewal frequency. If you are experimenting and may want to withdraw funds quickly, you could shorten it to 1-2 weeks.
-
-### The Atomic Transaction
-
-```javascript
-const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-    depositAmount,
-    operatorAddress,
-    rateAllowance,
-    lockupAllowance,
-    lockupPeriod
-);
-```
-
-This single method call performs two distinct operations atomically:
-
-1. Deposits USDFC from your wallet into your payment account
-2. Approves the operator to charge from that payment account within specified limits
-
-Executing these atomically provides important guarantees. Either both operations succeed or both fail. You cannot end up in a state where funds got deposited but the operator was not approved, or where the operator was approved but funds were not deposited.
-
-The method also saves gas by combining what would otherwise be two separate transactions into one. On mainnet, where gas costs real money, this optimization provides tangible savings.
+The `transaction` object returned by `prepare()` encapsulates the required deposit and approval as a single atomic call. Calling `.execute()` submits it to the blockchain and returns the transaction hash. The Synapse SDK formats these calls optimally.
 
 ### Balance Verification
 
 ```javascript
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-const updatedWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+const paymentBalance = await synapse.payments.balance();
+const updatedWalletBalance = await synapse.payments.walletBalance();
 ```
 
-After the deposit, you should verify that funds moved correctly. The `balance()` method returns your payment account balance, which should have increased by the deposit amount. The `walletBalance()` method returns your wallet balance, which should have decreased by the deposit amount plus gas costs.
-
-This verification serves as a sanity check. If the balances do not reflect the expected changes, something went wrong. On testnet this is not critical, but on mainnet you should always verify that large deposits succeeded as intended.
-
-### Allowance Inspection
-
-```javascript
-const allowance = await synapse.payments.allowance(
-    operatorAddress,
-    TOKENS.USDFC
-);
-
-// Format rate allowance with null check
-let rateAllowanceDisplay;
-if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
-    rateAllowanceDisplay = 'Not set';
-} else if (allowance.rateAllowance === ethers.MaxUint256) {
-    rateAllowanceDisplay = 'Unlimited';
-} else {
-    rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
-}
-```
-
-This retrieves the current allowance you have granted to the operator. The returned object contains `rateAllowance` and `lockupAllowance` fields that reflect the limits you set.
-
-The null checks before formatting are critical for defensive programming. In some edge cases, particularly immediately after setting allowances or during network synchronization delays, the SDK might return `null` or `undefined` for allowance values. Attempting to format these directly with `ethers.formatUnits()` would throw a `BigNumberish` error.
-
-The conditional logic handles three scenarios:
-
-1. **Null or Undefined**: The allowance has not been set or is not yet synchronized. This should not normally occur after a successful approval transaction, but checking prevents runtime errors.
-
-2. **MaxUint256**: The allowance was set to unlimited, which is the most common case. We display this as "Unlimited" for readability rather than showing the enormous 78-digit number.
-
-3. **Specific Value**: The allowance was set to a specific amount, which we format as human-readable USDFC.
-
-Checking allowances confirms that the approval succeeded and the operator has the permissions needed to charge your account. This is particularly important if you ever need to revoke or modify allowances later. The allowance system provides transparency into exactly which operators can charge your account and what their limits are.
+After the deposit, you verify that funds moved correctly. The `balance()` method returns your payment account balance, which should have increased by the deposit amount. The `walletBalance()` method returns your wallet balance, which should have decreased by the deposit amount plus gas costs.
 
 ## Step 2: Run the Script
 
@@ -331,28 +200,22 @@ Managing Filecoin Payment Accounts...
 ✓ SDK initialized
 
 === Step 1: Configure Deposit Parameters ===
-Deposit Amount: 5.0 USDFC
-Operator Address: 0x1234567890abcdef1234567890abcdef12345678
-Rate Allowance: Unlimited (115792089237316195423570985008687907853269984665640564039457584007913129639935)
-Lockup Allowance: Unlimited (115792089237316195423570985008687907853269984665640564039457584007913129639935)
-Lockup Period: 86400 epochs (~30 days)
+Target Data Size: 5 TiB
+Total Value Required: 3750000000000000000 raw units of USDFC (wei)
+Payment Status: Deposit required
 
 === Step 2: Validate Balance ===
 ✓ Sufficient USDFC balance confirmed
 
 === Step 3: Deposit and Approve Operator ===
-Submitting transaction...
+Submitting payment and approval transaction...
 Transaction Hash: 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
 Waiting for confirmation...
-✓ Transaction confirmed in block 123456
+✓ Payment transaction confirmed
 
 === Step 4: Verify Payment Account Balance ===
-Payment Account Balance: 5.0 USDFC
-Wallet Balance: 13.499 USDFC
-
-=== Step 5: Check Operator Allowances ===
-Rate Allowance: Unlimited
-Lockup Allowance: Unlimited
+Payment Account Balance: 3750000000000000000 USDFC (wei)
+Wallet Balance: 13499000000000000000 USDFC (wei)
 
 ✅ Payment setup complete! Your account is ready for storage operations.
 ```
@@ -397,7 +260,7 @@ The lockup period affects both cost and flexibility. Understanding these tradeof
 
 Every deposit to your payment account consumes gas paid in tFIL. Understanding these costs helps with budgeting.
 
-On Calibration testnet, gas is free since tFIL has no value. On mainnet, gas costs real FIL. The `depositWithPermitAndApproveOperator` transaction is relatively expensive because it performs two operations: an ERC-20 permit signature verification and an operator approval.
+On Calibration testnet, gas is free since tFIL has no value. On mainnet, gas costs real FIL. The deposit transaction is relatively expensive because it performs two operations atomically: an ERC-20 permit signature verification and an operator approval.
 
 Typical gas costs on mainnet range from 0.0001 to 0.001 FIL depending on network congestion, which translates to a few cents at current FIL prices. This is negligible compared to the storage costs you are funding, but it means you should not deposit trivial amounts frequently. Depositing 0.1 USDFC every day would waste more on gas than the deposits are worth.
 
@@ -423,7 +286,7 @@ Ensure your wallet contains enough USDFC to cover the deposit amount. Remember t
 
 **Transaction fails with "permit expired"**
 
-The permit signature used in `depositWithPermitAndApproveOperator` has a deadline. If your system clock is significantly wrong, the signature might be rejected. Ensure your system time is accurate.
+The permit signature used in the deposit transaction has a deadline. If your system clock is significantly wrong, the signature might be rejected. Ensure your system time is accurate.
 
 **Balance does not update after deposit**
 
@@ -433,20 +296,21 @@ Wait approximately 60 seconds for the transaction to be mined. Filecoin block ti
 
 This typically means the transaction failed. Verify the transaction hash shows success on the block explorer. If the transaction succeeded but allowances show 0, ensure you are checking the allowance for the correct operator address.
 
-**"invalid BigNumberish value" error when checking allowances**
+**"Cannot format null value" error when checking allowances**
 
-This error occurs when trying to format `null` or `undefined` allowance values with `ethers.formatUnits()`. The code in this walkthrough includes null checks to prevent this, but if you encounter it in your own code, ensure you check for null/undefined before formatting:
+This error occurs when trying to format `null` or `undefined` allowance values with `formatUnits()`. The code in this walkthrough includes null checks to prevent this, but if you encounter it in your own code, ensure you check for null/undefined before formatting:
 
 ```javascript
+const MAX_UINT256 = 2n ** 256n - 1n;
+
 if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
     console.log('Rate Allowance: Not set');
-} else if (allowance.rateAllowance === ethers.MaxUint256) {
+} else if (allowance.rateAllowance === MAX_UINT256) {
     console.log('Rate Allowance: Unlimited');
 } else {
-    console.log(`Rate Allowance: ${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`);
+    console.log(`Rate Allowance: ${formatUnits(allowance.rateAllowance)} USDFC`);
 }
 ```
-
 
 This defensive approach handles edge cases where the blockchain state may not be fully synchronized immediately after transactions.
 

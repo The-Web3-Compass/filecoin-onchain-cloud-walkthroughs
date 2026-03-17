@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, calibration, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -25,9 +26,12 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(privateKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("✓ SDK initialized successfully\n");
@@ -37,8 +41,8 @@ async function main() {
     // ========================================================================
     console.log("💰 Step 2: Verifying Payment Account...\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Payment Account Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
+    console.log(`Payment Account Balance: ${formatUnits(paymentBalance, 18)} USDFC`);
 
     if (paymentBalance === 0n) {
         console.log("\n⚠️  Warning: Payment account has no balance!");
@@ -49,8 +53,8 @@ async function main() {
     }
 
     // Verify operator allowances
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("\n⚠️  Warning: Operator allowances not set!");

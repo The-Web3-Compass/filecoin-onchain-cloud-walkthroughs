@@ -53,15 +53,15 @@ npm init -y
 
 ### 2. Install The Toolchain
 
-We need a specific set of tools. Note that `ethers` is a **peer dependency** of the Synapse SDK, meaning you must install it alongside the SDK.
+We need a specific set of tools.
 
 ```bash
-npm install @filoz/synapse-sdk ethers dotenv express cors node-cron
+npm install @filoz/synapse-sdk viem dotenv express cors node-cron
 ```
 
 **Why these packages?**
 - **`@filoz/synapse-sdk`**: The official Filecoin Cloud SDK. It handles the complex cryptography and networking required to talk to Filecoin and Beam CDN.
-- **`ethers`**: Essential for handling 18-decimal token precision (BigInts) and blockchain interactions.
+- **`viem`**: Ethereum/Filecoin client library used by the SDK for wallet signing and transaction handling.
 - **`node-cron`**: Monitoring isn't a one-time event. We need a scheduler to run our probes every minute/hour (we'll use this in Part 3).
 - **`express` & `cors`**: For serving our data to a dashboard.
 
@@ -115,18 +115,21 @@ Active monitoring costs money (micropayments). We need to fund our robot.
 We will create `fund-account.js`. This script uses the `Synapse.create()` method to initialize a connection and then executes a deposit.
 
 ```javascript
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration, parseUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import 'dotenv/config';
 
 async function main() {
     console.log("Initializing Funding Operation...");
-    
-    // 1. Initialize the SDK
-    // The RPC URL points to the Calibration Testnet.
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+
+    // 1. Initialize the SDK (synchronous in v0.39+)
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("SDK Initialized. Preparing Deposit...");
@@ -134,15 +137,15 @@ async function main() {
     // 2. Deposit & Approve
     // We use 'depositWithPermitAndApproveOperator' for atomic safety.
     // It is safer than doing a deposit() and then an approve() separately.
-    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-        ethers.parseUnits("2.0", 18), // 2.0 USDFC
-        synapse.getWarmStorageAddress(),
-        ethers.MaxUint256, // Unlimited Rate Allowance (Safe, as usage is metered)
-        ethers.MaxUint256, // Unlimited Lockup Allowance
-        TIME_CONSTANTS.EPOCHS_PER_MONTH // Valid for 1 Month
-    );
-    
-    await tx.wait();
+    const hash = await synapse.payments.depositWithPermitAndApproveOperator({
+        amount: parseUnits("2.0"),                                                               // 2.0 USDFC
+        operator: synapse.chain.contracts.fwss.address,
+        rateAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), // Unlimited Rate Allowance
+        lockupAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), // Unlimited Lockup Allowance
+        maxLockupPeriod: TIME_CONSTANTS.EPOCHS_PER_MONTH                                        // Valid for 1 Month
+    });
+
+    await synapse.client.waitForTransactionReceipt({ hash });
     console.log("✅ Payment Channel Funded: 2.0 USDFC");
 }
 

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration } from '@filoz/synapse-sdk';
+import { createPublicClient, http, formatEther, formatUnits, parseUnits } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -36,26 +37,31 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const rpcUrl = process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1";
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(rpcUrl),
+        account,
+        source: 'payment-setup-walkthrough'
     });
 
-    const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-    );
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const publicClient = createPublicClient({
+        chain: calibration,
+        transport: http(rpcUrl)
+    });
 
     console.log("SDK initialized successfully.");
-    console.log(`Agent Wallet: ${wallet.address}\n`);
+    console.log(`Agent Wallet: ${account.address}\n`);
 
     // ========================================================================
     // Step 2: Check Gas Balance (FIL)
     // ========================================================================
     console.log("=== Step 2: Check Gas Balance (FIL) ===\n");
 
-    const gasBalance = await provider.getBalance(wallet.address);
-    const gasFormatted = Number(ethers.formatEther(gasBalance));
+    const gasBalance = await publicClient.getBalance({ address: account.address });
+    const gasFormatted = Number(formatEther(gasBalance));
 
     console.log(`Wallet FIL Balance: ${gasBalance.toString()} (raw units)`);
     console.log(`Formatted: ${gasFormatted.toFixed(4)} FIL`);
@@ -74,10 +80,10 @@ async function main() {
     // ========================================================================
     console.log("=== Step 3: Check USDFC Balances ===\n");
 
-    const walletUSDFC = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletUSDFC = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
     const walletUSDFCFormatted = Number(walletUSDFC) / 1e18;
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const paymentFormatted = Number(paymentBalance) / 1e18;
 
     console.log("USDFC Distribution:");
@@ -94,13 +100,13 @@ async function main() {
     // ========================================================================
     console.log("=== Step 4: Payment Account Details ===\n");
 
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
     console.log("Payment Account Breakdown:");
-    console.log(`  Total Funds:     ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
-    console.log(`  Current Lockup:  ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
-    console.log(`  Lockup Rate:     ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
-    console.log(`  Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+    console.log(`  Total Funds:     ${formatUnits(accountInfo.funds, 18)} USDFC`);
+    console.log(`  Current Lockup:  ${formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
+    console.log(`  Lockup Rate:     ${formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
+    console.log(`  Available Funds: ${formatUnits(accountInfo.availableFunds, 18)} USDFC`);
     console.log(`  Last Settled:    Epoch ${accountInfo.lockupLastSettledAt}`);
     console.log();
 
@@ -140,17 +146,17 @@ async function main() {
             console.log(`Depositing ${TOP_UP_AMOUNT} USDFC into payment account...\n`);
 
             try {
-                const depositAmount = ethers.parseUnits(String(TOP_UP_AMOUNT), 18);
-                const receipt = await synapse.payments.depositWithPermit({ amount: depositAmount });
+                const depositAmount = parseUnits(String(TOP_UP_AMOUNT), 18);
+                const txHash = await synapse.payments.depositWithPermit({ amount: depositAmount, token: TOKENS.USDFC });
 
                 console.log("Deposit successful.");
                 console.log(`  Amount: ${TOP_UP_AMOUNT} USDFC`);
-                if (receipt && receipt.transactionHash) {
-                    console.log(`  Transaction: ${receipt.transactionHash}`);
+                if (txHash) {
+                    console.log(`  Transaction: ${txHash}`);
                 }
 
                 // Verify new balance
-                const newBalance = await synapse.payments.balance(TOKENS.USDFC);
+                const newBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
                 const newFormatted = Number(newBalance) / 1e18;
                 console.log(`  New payment balance: ${newFormatted.toFixed(4)} USDFC`);
             } catch (error) {
@@ -173,30 +179,30 @@ async function main() {
     // ========================================================================
     console.log("=== Step 6: Operator Approval Verification ===\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
+    const operatorAddress = synapse.chain.contracts.fwss.address;
 
     console.log(`Storage Operator: ${operatorAddress}`);
 
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     console.log(`Approved: ${approval.isApproved}`);
-    console.log(`Rate Allowance: ${ethers.formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
-    console.log(`Lockup Allowance: ${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`);
+    console.log(`Rate Allowance: ${formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
+    console.log(`Lockup Allowance: ${formatUnits(approval.lockupAllowance, 18)} USDFC`);
     console.log();
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("Operator is not fully approved. Attempting to fix...\n");
 
         try {
-            const receipt = await synapse.payments.approveService(operatorAddress, TOKENS.USDFC);
+            const txHash = await synapse.payments.approveService({ service: operatorAddress, token: TOKENS.USDFC });
 
             console.log("Approval granted successfully.");
-            if (receipt && receipt.transactionHash) {
-                console.log(`  Transaction: ${receipt.transactionHash}`);
+            if (txHash) {
+                console.log(`  Transaction: ${txHash}`);
             }
 
             // Verify new approval
-            const newApproval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+            const newApproval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
             console.log(`  New approval status: ${newApproval.isApproved}`);
         } catch (error) {
             console.log("Approval failed:", error.message);
@@ -212,7 +218,7 @@ async function main() {
     // ========================================================================
     console.log("=== Step 7: Payment Rail Monitoring ===\n");
 
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await synapse.payments.getRailsAsPayer({ token: TOKENS.USDFC });
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Total payment rails: ${rails.length}`);
@@ -261,7 +267,7 @@ async function main() {
 
     const healthDashboard = {
         timestamp: new Date().toISOString(),
-        agent: wallet.address,
+        agent: account.address,
         network: "Filecoin Calibration Testnet",
         gas: {
             balance: gasFormatted.toFixed(4) + " FIL",
