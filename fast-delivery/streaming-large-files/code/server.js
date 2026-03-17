@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import { readFileSync, createReadStream, statSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -31,9 +32,12 @@ async function initializeSynapse() {
         throw new Error('Missing PRIVATE_KEY in .env file');
     }
 
-    synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: 'https://api.calibration.node.glif.io/rpc/v1'
+    const account = privateKeyToAccount(privateKey);
+    synapse = Synapse.create({
+        chain: calibration,
+        transport: http('https://api.calibration.node.glif.io/rpc/v1'),
+        account,
+        source: null
     });
 
     console.log('✓ Synapse SDK initialized');
@@ -152,7 +156,7 @@ app.post('/upload', async (req, res) => {
         const sdk = await initializeSynapse();
 
         // Verify payment account
-        const paymentBalance = await sdk.payments.balance(TOKENS.USDFC);
+        const paymentBalance = await sdk.payments.balance({ token: TOKENS.USDFC });
         if (paymentBalance === 0n) {
             throw new Error('Payment account has no balance');
         }

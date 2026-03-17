@@ -144,7 +144,8 @@ Replace the generated `package.json` contents with:
     "start": "node index.js"
   },
   "dependencies": {
-    "@filoz/synapse-sdk": "^0.36.1",
+    "@filoz/synapse-sdk": "^0.39.0",
+    "viem": "^2.0.0",
     "dotenv": "^16.4.5"
   }
 }
@@ -158,9 +159,10 @@ The `"type": "module"` entry tells Node.js to interpret `.js` files as ES module
 npm install
 ```
 
-This installs two packages:
+This installs three packages:
 
 - **@filoz/synapse-sdk** — the Filecoin interface that handles wallet operations, storage deals, and payment account management behind clean method calls.
+- **viem** — the Ethereum client library the Synapse SDK uses under the hood. You need it directly to convert your treasury private key into a wallet account.
 - **dotenv** — reads environment variables from a local file so your treasury key never touches source code.
 
 **Store your treasury credentials:**
@@ -189,12 +191,9 @@ Save that as `.gitignore`. A leaked treasury key is worse than a leaked user key
 Create `index.js` in your project directory:
 
 ```javascript
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Simulated application database
 const APPLICATION_DB = {
@@ -215,9 +214,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY (Treasury wallet key)");
     }
 
-    const treasury = await Synapse.create({
-        privateKey: treasuryKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedKey = treasuryKey.startsWith('0x')
+        ? treasuryKey
+        : `0x${treasuryKey}`;
+
+    const treasury = Synapse.create({
+        account: privateKeyToAccount(formattedKey),
+        source: 'dapp-pays-demo'
     });
 
     console.log("=== Step 1: Treasury Initialized ===");
@@ -227,7 +230,7 @@ async function main() {
     // Step 2: Verify Treasury Solvency
     console.log("=== Step 2: Treasury Solvency Check ===");
 
-    const balance = await treasury.payments.balance(TOKENS.USDFC);
+    const balance = await treasury.payments.balance();
     const balanceFormatted = Number(balance) / 1e18;
 
     console.log(`Treasury Balance: ${balance.toString()} (raw units)`);
@@ -240,29 +243,14 @@ async function main() {
     }
 
     // Check account info for ongoing obligations
-    const health = await treasury.payments.accountInfo(TOKENS.USDFC);
+    const health = await treasury.payments.accountInfo();
     console.log(`\nTreasury Info:`);
     console.log(`  Available: ${(Number(health.availableFunds) / 1e18).toFixed(4)} USDFC`);
     console.log(`  Locked: ${(Number(health.lockupCurrent) / 1e18).toFixed(4)} USDFC`);
     console.log("Treasury is solvent.\n");
 
-    // Step 3: Verify Operator Approval
-    console.log("=== Step 3: Operator Approval ===");
-    const operatorAddress = treasury.getWarmStorageAddress();
-    const approval = await treasury.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    console.log(`Storage Operator: ${operatorAddress}`);
-    console.log(`Approved: ${approval.isApproved}`);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("\nStorage operator is not approved.");
-        console.log("Please run the payment-management tutorial first.");
-        process.exit(1);
-    }
-    console.log("Operator approved.\n");
-
-    // Step 4: Simulate User Request
-    console.log("=== Step 4: Simulated User Request ===");
+    // Step 3: Simulate User Request
+    console.log("=== Step 3: Simulated User Request ===");
 
     const userId = "user_alice";
     const user = APPLICATION_DB.users[userId];
@@ -282,8 +270,28 @@ async function main() {
 
     console.log(`User submitted ${userData.length} bytes for upload.`);
 
+    // Step 4: Verify Treasury is Ready to Sponsor
+    console.log("\n=== Step 4: Treasury Payment Readiness ===");
+
+    const prep = await treasury.storage.prepare({
+        dataSize: BigInt(userData.length)
+    });
+
+    if (!prep.costs.ready && prep.transaction) {
+        console.log("Setting up treasury payment and approval (one-time setup)...");
+        const { hash } = await prep.transaction.execute();
+        await treasury.client.waitForTransactionReceipt({ hash });
+        console.log("Treasury payment setup confirmed.\n");
+    } else if (!prep.costs.ready) {
+        console.log("\nTreasury payment account is not ready.");
+        console.log("Please run the payment-management tutorial to fund the treasury.");
+        process.exit(1);
+    } else {
+        console.log("Treasury is ready to sponsor uploads.\n");
+    }
+
     // Step 5: Sponsored Upload
-    console.log("\n=== Step 5: Sponsored Upload ===");
+    console.log("=== Step 5: Sponsored Upload ===");
     console.log("Application treasury is signing and paying for this upload.");
     console.log("User will not see any transaction or pay any fees.\n");
 
@@ -296,10 +304,7 @@ async function main() {
 
         console.log("Upload successful.");
         console.log(`PieceCID: ${uploadResult.pieceCid}`);
-        console.log(`Size: ${uploadResult.size} bytes`);
-        if (uploadResult.provider) {
-            console.log(`Provider: ${uploadResult.provider}`);
-        }
+        console.log(`Copies stored: ${uploadResult.copies.length}`);
         console.log(`Sponsor: Application Treasury`);
     } catch (error) {
         console.error("Sponsored upload failed:", error.message);
@@ -311,7 +316,6 @@ async function main() {
 
     user.uploads.push({
         pieceCid: uploadResult.pieceCid,
-        size: uploadResult.size,
         uploadedAt: new Date().toISOString(),
         sponsoredBy: "treasury"
     });
@@ -324,13 +328,13 @@ async function main() {
     console.log("User's storage inventory:");
     user.uploads.forEach((upload, index) => {
         console.log(`  ${index + 1}. ${upload.pieceCid.toString().substring(0, 30)}...`);
-        console.log(`     Size: ${upload.size} bytes, Uploaded: ${upload.uploadedAt}`);
+        console.log(`     Uploaded: ${upload.uploadedAt}`);
     });
 
     // Step 7: Verify Economic Relationship
     console.log("\n=== Step 7: Economic Verification ===");
 
-    const rails = await treasury.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await treasury.payments.getRailsAsPayer({});
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Treasury has ${activeRails.length} active payment rails.`);
@@ -340,7 +344,7 @@ async function main() {
     // Step 8: Treasury Health After Operation
     console.log("=== Step 8: Post-Operation Treasury Health ===");
 
-    const newHealth = await treasury.payments.accountInfo(TOKENS.USDFC);
+    const newHealth = await treasury.payments.accountInfo();
     console.log(`Updated Treasury Info:`);
     console.log(`  Available: ${(Number(newHealth.availableFunds) / 1e18).toFixed(4)} USDFC`);
     console.log(`  Locked: ${(Number(newHealth.lockupCurrent) / 1e18).toFixed(4)} USDFC`);
@@ -372,11 +376,17 @@ This script demonstrates the complete dApp-Pays workflow with treasury managemen
 ### Treasury Initialization
 
 ```javascript
-const treasury = await Synapse.create({
-    privateKey: treasuryKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+const formattedKey = treasuryKey.startsWith('0x')
+    ? treasuryKey
+    : `0x${treasuryKey}`;
+
+const treasury = Synapse.create({
+    account: privateKeyToAccount(formattedKey),
+    source: 'dapp-pays-demo'
 });
 ```
+
+`Synapse.create()` is synchronous — no `await` needed. `privateKeyToAccount()` from viem converts the raw private key into a full signing account. The `source` string is required; it namespaces the data sets created by this application so they remain distinct if multiple applications share the same treasury wallet.
 
 The critical distinction from User-Pays: **this private key belongs to your application, not users**. You control it. You store it securely (environment variables, secrets manager, HSM). You never share it with users.
 
@@ -389,23 +399,23 @@ In production, this key requires extreme protection. If compromised, attackers c
 ### Treasury Solvency Verification
 
 ```javascript
-const balance = await treasury.payments.balance(TOKENS.USDFC);
+const balance = await treasury.payments.balance();
 
 if (balance === 0n) {
     console.log("Treasury is empty.");
     process.exit(1);
 }
 
-const info = await treasury.payments.accountInfo(TOKENS.USDFC);
+const health = await treasury.payments.accountInfo();
 ```
 
-Before accepting uploads, verify your treasury can pay. The `accountInfo()` method provides richer information than simple balance:
+Before accepting uploads, verify your treasury can pay. Both methods default to USDFC — no token argument needed. The `accountInfo()` method provides richer information than simple balance:
 
 - `availableFunds`: USDFC currently available for new operations
 - `lockupCurrent`: USDFC already committed to ongoing deals
 - `lockupRate`: Rate of USDFC being consumed per epoch
 
-Monitoring these metrics prevents service interruptions. If `fundedUntilEpoch` drops below acceptable thresholds, trigger alerts to refund the treasury.
+Monitoring these metrics prevents service interruptions. When `availableFunds` drops below acceptable thresholds, trigger alerts to refund the treasury.
 
 ### Simulated User Authentication
 
@@ -428,13 +438,33 @@ app.post('/api/upload', authenticate, async (req, res) => {
 
 Users authenticate through your existing systems. They never connect wallets because they're not paying. Your application validates their identity, accepts their data, and handles storage using treasury funds.
 
+### Treasury Payment Readiness
+
+```javascript
+const prep = await treasury.storage.prepare({
+    dataSize: BigInt(userData.length)
+});
+
+if (!prep.costs.ready && prep.transaction) {
+    const { hash } = await prep.transaction.execute();
+    await treasury.client.waitForTransactionReceipt({ hash });
+}
+```
+
+`prepare()` checks whether the treasury has enough deposited funds and the operator approval required for this specific upload size. If either is missing, it returns a `transaction` that handles both the deposit and the approval in one on-chain call. You execute that transaction, wait for confirmation, and the treasury is set up.
+
+This happens once during initial treasury setup. On subsequent calls, `prep.costs.ready` is `true` and no transaction is needed — the SDK skips straight to the readiness confirmation.
+
 ### Sponsored Upload Execution
 
 ```javascript
 uploadResult = await treasury.storage.upload(userData);
+
+console.log(`PieceCID: ${uploadResult.pieceCid}`);
+console.log(`Copies stored: ${uploadResult.copies.length}`);
 ```
 
-The upload call looks identical to User-Pays, but the identity context differs completely. The `treasury` variable holds your application's credentials. The resulting storage deal names your treasury as the payer.
+The upload call looks identical to User-Pays, but the identity context differs completely. The `treasury` variable holds your application's credentials. The resulting storage deal names your treasury as the payer. The `copies` array tells you how many storage providers received the data — the SDK handles the multi-provider distribution automatically.
 
 Users have no visibility into this transaction. They don't sign anything. They don't see gas fees. From their perspective, data upload is a pure API call that either succeeds or fails.
 
@@ -461,7 +491,7 @@ This is an operational responsibility you accept in exchange for user convenienc
 ### Economic Verification
 
 ```javascript
-const rails = await treasury.payments.getRailsAsPayer(TOKENS.USDFC);
+const rails = await treasury.payments.getRailsAsPayer({});
 ```
 
 Checking payment rails confirms the expected economic structure: your treasury is the payer on all rails. Users appear nowhere in on-chain payment relationships.
@@ -490,28 +520,30 @@ dApp-Pays Architecture Demo
 In this model, the application treasury pays for all storage.
 Users never interact with wallets or tokens.
 
-=== Step 1: Treasury Connection ===
-Treasury Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
+=== Step 1: Treasury Initialized ===
+SDK connected with treasury wallet credentials.
 This wallet is controlled by your application, not users.
 
 === Step 2: Treasury Solvency Check ===
-Treasury Balance: 5000000000000000000 wei
+Treasury Balance: 5000000000000000000 (raw units)
 Formatted: 5.0000 USDFC
 
-Treasury Health:
+Treasury Info:
   Available: 4.5000 USDFC
   Locked: 0.5000 USDFC
-  Funded for: 1000000 epochs
-Treasury is solvent. Proceeding with sponsored operations.
+Treasury is solvent.
 
 === Step 3: Simulated User Request ===
 Authenticated user: user_alice
 Email: alice@example.com
 User authenticated via traditional OAuth/session - no wallet involved.
 
-User submitted 142 bytes for upload.
+User submitted 207 bytes for upload.
 
-=== Step 4: Sponsored Upload ===
+=== Step 4: Treasury Payment Readiness ===
+Treasury is ready to sponsor uploads.
+
+=== Step 5: Sponsored Upload ===
 Application treasury is signing and paying for this upload.
 User will not see any transaction or pay any fees.
 
@@ -520,11 +552,10 @@ Uploading to Filecoin network...
 
 Upload successful.
 PieceCID: bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq
-Size: 512 bytes
-Provider: 0x1234567890abcdef...
-Sponsor: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1 (Application Treasury)
+Copies stored: 1
+Sponsor: Application Treasury
 
-=== Step 5: Database Update ===
+=== Step 6: Database Update ===
 Recorded upload for user_alice:
   PieceCID: bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq
   Database now tracks this PieceCID belongs to user_alice
@@ -532,15 +563,15 @@ Recorded upload for user_alice:
 
 User's storage inventory:
   1. bafkzcibca3mms52by4xvzpi7dn6...
-     Size: 512 bytes, Uploaded: 2024-01-15T10:30:00.000Z
+     Uploaded: 2024-01-15T10:30:00.000Z
 
-=== Step 6: Economic Verification ===
+=== Step 7: Economic Verification ===
 Treasury has 1 active payment rails.
-Payer on all rails: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1 (Treasury)
+Treasury is the payer on all rails.
 Users have no on-chain payment relationship with providers.
 
-=== Step 7: Post-Operation Treasury Health ===
-Updated Treasury Health:
+=== Step 8: Post-Operation Treasury Health ===
+Updated Treasury Info:
   Available: 4.4900 USDFC
   Locked: 0.5100 USDFC
   New lockup from this upload: 0.010000 USDFC
@@ -605,16 +636,16 @@ Build dashboards and alerts around treasury health:
 
 ```javascript
 async function checkTreasuryHealth(synapse, thresholds) {
-    const info = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const info = await synapse.payments.accountInfo();
     const availableUSDFC = Number(info.availableFunds) / 1e18;
-    
+
     if (availableUSDFC < thresholds.critical) {
         await sendAlert("CRITICAL: Treasury critically low", availableUSDFC);
         // Consider pausing new uploads
     } else if (availableUSDFC < thresholds.warning) {
         await sendAlert("WARNING: Treasury running low", availableUSDFC);
     }
-    
+
     return availableUSDFC;
 }
 ```

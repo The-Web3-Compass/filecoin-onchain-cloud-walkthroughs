@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -28,9 +30,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: 'agent-memory-walkthrough'
     });
 
     console.log("SDK initialized successfully.\n");
@@ -40,7 +46,7 @@ async function main() {
     // ========================================================================
     console.log("=== Step 2: Verify Payment Readiness ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
@@ -54,8 +60,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("Storage operator is not approved to charge this account.");
@@ -202,7 +208,7 @@ async function main() {
     console.log(`Retrieving memory entry ${targetEntry.sequence} (${targetEntry.type})...`);
     console.log(`PieceCID: ${targetEntry.pieceCid}\n`);
 
-    const downloaded = await synapse.storage.download(String(targetEntry.pieceCid));
+    const downloaded = await synapse.storage.download({ pieceCid: targetEntry.pieceCid });
 
     const downloadedString = new TextDecoder().decode(downloaded);
     const downloadedEntry = JSON.parse(downloadedString);

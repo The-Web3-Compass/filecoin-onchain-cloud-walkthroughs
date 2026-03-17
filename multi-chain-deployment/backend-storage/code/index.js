@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 
 // Load .env.local first (if it exists), then .env
 dotenv.config({ path: '.env.local' });
@@ -25,9 +27,12 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in environment");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: backendKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(backendKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("Backend SDK initialized successfully.");
@@ -36,7 +41,7 @@ async function main() {
     // Step 2: Check Wallet Balance (Gas)
     console.log("=== Step 2: Wallet Balance Check ===\n");
 
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
     const walletBalanceFormatted = Number(walletBalance) / 1e18;
 
     console.log(`Wallet USDFC Balance: ${walletBalanceFormatted.toFixed(4)} USDFC`);
@@ -50,7 +55,7 @@ async function main() {
     // Step 3: Check Payment Account Balance
     console.log("\n=== Step 3: Payment Account Balance ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const paymentBalanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalanceFormatted.toFixed(4)} USDFC`);
@@ -67,8 +72,8 @@ async function main() {
     // Step 4: Verify Operator Approval
     console.log("\n=== Step 4: Operator Approval ===\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
 
     console.log(`Storage Operator: ${operatorAddress}`);
     console.log(`Approved: ${approval.isApproved}`);
@@ -119,7 +124,7 @@ async function main() {
     console.log(`Downloading data for PieceCID: ${uploadResult.pieceCid}...`);
 
     try {
-        const downloadedData = await synapse.storage.download(uploadResult.pieceCid);
+        const downloadedData = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 
         console.log("Download successful.");
         console.log(`Retrieved ${downloadedData.length} bytes`);
@@ -145,7 +150,7 @@ async function main() {
     // Step 7: Account Health
     console.log("\n=== Step 7: Account Health ===\n");
 
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
     console.log("Current Account Status:");
     console.log(`  Available: ${(Number(accountInfo.availableFunds) / 1e18).toFixed(4)} USDFC`);

@@ -1,6 +1,8 @@
 import 'dotenv/config';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const MAX_UINT256 = 2n ** 256n - 1n;
 
 async function main() {
     console.log("Checking Operator Approvals\n");
@@ -11,19 +13,18 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'operator-approvals'
     });
 
     console.log("✓ SDK initialized\n");
 
-    // Get operator address
-    const operatorAddress = synapse.getWarmStorageAddress();
-    console.log(`Warm Storage Operator: ${operatorAddress}\n`);
-
-    // Check approval status
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    // Check approval status for the WarmStorage operator
+    // No address argument needed — the SDK resolves the operator automatically
+    const approval = await synapse.payments.serviceApproval();
 
     console.log("Approval Status:");
     console.log(`  Approved: ${approval.isApproved ? '✓ Yes' : '✗ No'}`);
@@ -31,28 +32,31 @@ async function main() {
     if (approval.isApproved) {
         // Format rate allowance
         let rateDisplay;
-        if (approval.rateAllowance === ethers.MaxUint256) {
+        if (approval.rateAllowance === MAX_UINT256) {
             rateDisplay = 'Unlimited';
-        } else if (approval.rateAllowance === null || approval.rateAllowance === undefined) {
+        } else if (approval.rateAllowance == null) {
             rateDisplay = 'Not set';
         } else {
-            rateDisplay = `${ethers.formatUnits(approval.rateAllowance, 18)} USDFC`;
+            rateDisplay = `${formatUnits(approval.rateAllowance)} USDFC`;
         }
 
         // Format lockup allowance
         let lockupDisplay;
-        if (approval.lockupAllowance === ethers.MaxUint256) {
+        if (approval.lockupAllowance === MAX_UINT256) {
             lockupDisplay = 'Unlimited';
-        } else if (approval.lockupAllowance === null || approval.lockupAllowance === undefined) {
+        } else if (approval.lockupAllowance == null) {
             lockupDisplay = 'Not set';
         } else {
-            lockupDisplay = `${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`;
+            lockupDisplay = `${formatUnits(approval.lockupAllowance)} USDFC`;
         }
 
         console.log(`  Rate Allowance: ${rateDisplay}`);
         console.log(`    → Maximum the operator can charge per epoch`);
+        console.log(`    → Currently used: ${approval.rateUsage}`);
         console.log(`  Lockup Allowance: ${lockupDisplay}`);
-        console.log(`    → Maximum the operator can lock up\n`);
+        console.log(`    → Maximum the operator can lock up`);
+        console.log(`    → Currently used: ${approval.lockupUsage}`);
+        console.log(`  Max Lockup Period: ${approval.maxLockupPeriod} epochs\n`);
 
         console.log("✅ Operator is approved and ready to use!");
     } else {

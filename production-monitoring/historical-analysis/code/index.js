@@ -1,91 +1,88 @@
 import dotenv from 'dotenv';
-import { Synapse, SubgraphService, TOKENS, TIME_CONSTANTS, epochToDate } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http, formatUnits } from 'viem';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-// Configure Subgraph Service
-// You can use a direct endpoint URL or Goldsky configuration
-const SUBGRAPH_ENDPOINT = process.env.SUBGRAPH_ENDPOINT || "https://api.goldsky.com/api/public/project_clqv.../subgraphs/filecoin-stats/v1.0.0/gn";
-
 /**
- * Historical Analysis with Subgraph
- * 
+ * Historical Analysis
+ *
  * This module demonstrates how to:
- * 1. Connect to a Filecoin subgraph using the SDK's SubgraphService
- * 2. Query historical data sets and pieces
- * 3. Analyze provider performance from on-chain data
+ * 1. Query your on-chain data sets using the SDK
+ * 2. Inspect provider information from the storage service
+ * 3. Analyze provider performance metrics
  * 4. Generate time-series metrics
  * 5. Track storage costs and lockups
- * 
+ *
+ * Note: The SDK no longer bundles a SubgraphService. For deep historical
+ * event queries, deploy your own subgraph (e.g. via Goldsky) and query it
+ * directly with fetch(). This walkthrough covers what's available natively
+ * through the SDK.
+ *
  * Building block for: Historical charts in Storage Operations Dashboard
  */
 async function main() {
-    console.log("Historical Analysis Demo (Subgraph)\n");
-    console.log("Query and analyze Filecoin storage history using GraphQL.\n");
+    console.log("Historical Analysis Demo\n");
+    console.log("Query and analyze your Filecoin storage state on-chain.\n");
 
     // ========================================================================
-    // Step 1: Initialize SDK & Subgraph Service
+    // Step 1: Initialize SDK
     // ========================================================================
     console.log("=== Step 1: Initialization ===\n");
 
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-    });
-
-    // Initialize Subgraph Service
-    // The SDK handles the GraphQL connection and query logic
-    const subgraph = new SubgraphService({
-        endpoint: SUBGRAPH_ENDPOINT
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("✓ SDK initialized");
-    console.log(`✓ Subgraph Service connected to: ${SUBGRAPH_ENDPOINT.substring(0, 40)}...\n`);
+    console.log(`  Network: ${synapse.chain.name} (chain ID: ${synapse.chain.id})\n`);
 
     // ========================================================================
-    // Step 2: Query Data Sets (Storage Deals)
+    // Step 2: Query Your Data Sets On-Chain
     // ========================================================================
-    console.log("=== Step 2: Querying Storage Deals (Data Sets) ===\n");
+    console.log("=== Step 2: Querying Your Data Sets (On-Chain) ===\n");
 
+    // synapse.storage.findDataSets() queries the FWSS contract directly for
+    // all data sets associated with your wallet address. No subgraph needed.
     try {
-        // Query recent data sets using the SDK's typed method
-        const dataSets = await subgraph.queryDataSets({
-            first: 5,
-            orderBy: "createdAt",
-            orderDirection: "desc",
-            where: {
-                isActive: true
-            }
-        });
+        const dataSets = await synapse.storage.findDataSets();
 
-        console.log(`Found ${dataSets.length} recent active data sets:\n`);
+        console.log(`Found ${dataSets.length} data set(s) associated with your wallet:\n`);
         console.log("┌──────────────────────────────────────────────────────────────────────┐");
-        console.log("│ Data Set ID      │ Created    │ Provider        │ Size       │ Pieces  │");
+        console.log("│ Dataset ID │ Provider ID │ Active │ CDN │ Rail ID                    │");
         console.log("├──────────────────────────────────────────────────────────────────────┤");
 
         if (dataSets.length > 0) {
             for (const ds of dataSets) {
-                const created = epochToDate(ds.createdAt).toISOString().split('T')[0];
-                const providerShort = ds.serviceProvider?.name || truncateAddress(ds.serviceProvider?.serviceProvider);
-                const size = formatBytes(ds.totalDataSize);
-
-                console.log(`│ ${ds.id.padEnd(16)} │ ${created.padEnd(10)} │ ${providerShort.padEnd(15)} │ ${size.padEnd(10)} │ ${String(ds.totalPieces).padEnd(7)} │`);
+                const id = String(ds.dataSetId).padEnd(10);
+                const provider = String(ds.providerId).padEnd(11);
+                const active = (ds.isLive ? 'Yes' : 'No').padEnd(6);
+                const cdn = (ds.withCDN ? 'Yes' : 'No').padEnd(3);
+                const rail = String(ds.pdpRailId).padEnd(26);
+                console.log(`│ ${id} │ ${provider} │ ${active} │ ${cdn} │ ${rail} │`);
             }
         } else {
-            console.log("│ No data sets found. (Expected if subgraph is empty/syncing)        │");
-            console.log("│                                                                      │");
-            console.log("│ [Demo Data Fallback]                                                 │");
-            console.log("│ 0x123abc...      │ 2024-02-15 │ Warm Storage    │ 12.5 GB    │ 4       │");
-            console.log("│ 0x456def...      │ 2024-02-14 │ Provider A      │ 2.1 GB     │ 1       │");
+            console.log("│ No data sets found for this wallet.                                  │");
+            console.log("│ Upload some data first using storage-basics/first-upload.             │");
         }
         console.log("└──────────────────────────────────────────────────────────────────────┘\n");
 
+        if (dataSets.length > 0) {
+            const activeSets = dataSets.filter(ds => ds.isLive);
+            console.log(`Active data sets: ${activeSets.length} of ${dataSets.length}`);
+            console.log(`CDN-enabled sets: ${dataSets.filter(ds => ds.withCDN).length}\n`);
+        }
+
     } catch (error) {
-        console.log("Subgraph query failed (check endpoint URL):", error.message);
-        console.log("Continuing with demo data...\n");
+        console.log("Data set query failed:", error.message);
+        console.log("Ensure your wallet has at least one upload.\n");
     }
 
     // ========================================================================
@@ -93,57 +90,70 @@ async function main() {
     // ========================================================================
     console.log("=== Step 3: Provider Performance Analysis ===\n");
 
-    console.log("Analyzing provider reliability from on-chain fault records...\n");
+    console.log("Querying approved providers from storage service info...\n");
 
     try {
-        // In a real app, query fault records to calculate reliability
-        // const faults = await subgraph.queryFaultRecords({ ... });
-        // const reliability = 1 - (faults.length / totalPeriods);
+        const storageInfo = await synapse.storage.getStorageInfo();
+        const providers = storageInfo.providers;
 
-        const providerMetrics = [
-            { name: "Warm Storage (FOC)", successRate: 99.9, status: "Active" },
-            { name: "External Prov A", successRate: 98.2, status: "Active" },
-            { name: "External Prov B", successRate: 94.5, status: "Slow" }
-        ];
+        console.log(`Approved Storage Providers: ${providers.length}\n`);
+        console.log("Provider List:");
+        console.log("┌──────────────────────────────────────────────────────────────┐");
+        console.log("│ Provider ID │ Address                                        │");
+        console.log("├──────────────────────────────────────────────────────────────┤");
 
-        console.log("Provider Reliability Scorecard:");
-        console.log("┌──────────────────────────────────────────────────────────┐");
-        console.log("│ Provider                │ Success Rate │ Status          │");
-        console.log("├──────────────────────────────────────────────────────────┤");
-
-        for (const metric of providerMetrics) {
-            const statusIcon = metric.successRate >= 99 ? "🟢" : metric.successRate >= 95 ? "🟡" : "🔴";
-            console.log(`│ ${metric.name.padEnd(23)} │ ${String(metric.successRate + '%').padEnd(12)} │ ${statusIcon} ${metric.status.padEnd(13)} │`);
+        for (const provider of providers) {
+            const id = String(provider.providerId).padEnd(11);
+            const addr = truncateAddress(provider.serviceProvider).padEnd(46);
+            console.log(`│ ${id} │ ${addr} │`);
         }
-        console.log("└──────────────────────────────────────────────────────────┘\n");
+
+        if (providers.length === 0) {
+            console.log("│ No approved providers found on this network.                 │");
+        }
+        console.log("└──────────────────────────────────────────────────────────────┘\n");
+
+        console.log("Note: For fault counts, proof success rates, and historical reliability");
+        console.log("data, you need an off-chain indexer (subgraph). See Step 4 below.\n");
 
     } catch (err) {
-        console.log("Analysis error:", err.message);
+        console.log("Provider query error:", err.message);
     }
 
     // ========================================================================
-    // Step 4: Time-Series Data (Pieces Stored)
+    // Step 4: Historical Data via Subgraph (External)
     // ========================================================================
-    console.log("=== Step 4: Time-Series Data (Pieces Stored) ===\n");
+    console.log("=== Step 4: Historical Data (Subgraph Pattern) ===\n");
 
-    try {
-        // Query pieces created in the last 7 days
-        // const pieces = await subgraph.queryPieces({ ... });
+    // The SDK no longer bundles a SubgraphService. For time-series queries
+    // (proof history, fault events, piece creation timestamps), deploy a
+    // subgraph using Goldsky and query it with a standard fetch() call.
+    //
+    // Example using a deployed Goldsky endpoint:
+    //
+    //   const SUBGRAPH_ENDPOINT = process.env.SUBGRAPH_ENDPOINT;
+    //   const response = await fetch(SUBGRAPH_ENDPOINT, {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({ query: `{ dataSets(first: 5) { id totalPieces } }` })
+    //   });
+    //   const { data } = await response.json();
+    //
+    // Until you have a subgraph, use demo data to prototype your dashboard:
 
-        console.log("Daily Storage Activity (Last 7 Days):");
-        console.log("┌────────────────────────────────────────────────────────────────┐");
+    console.log("Daily Storage Activity (Demo — replace with subgraph query):");
+    console.log("┌────────────────────────────────────────────────────────────────┐");
 
-        const chartData = generateDemoTimeSeries();
+    const chartData = generateDemoTimeSeries();
 
-        for (const day of chartData) {
-            const bar = "█".repeat(Math.floor(day.pieces / 2));
-            console.log(`│ ${day.date} │ ${String(day.pieces).padStart(4)} pieces │ ${bar.padEnd(20)} │`);
-        }
-
-        console.log("└────────────────────────────────────────────────────────────────┘\n");
-    } catch (err) {
-        console.log("Chart generation error:", err.message);
+    for (const day of chartData) {
+        const bar = "█".repeat(Math.floor(day.pieces / 2));
+        console.log(`│ ${day.date} │ ${String(day.pieces).padStart(4)} pieces │ ${bar.padEnd(20)} │`);
     }
+
+    console.log("└────────────────────────────────────────────────────────────────┘");
+    console.log("\nTo use real data: deploy a Filecoin subgraph to Goldsky and set");
+    console.log("SUBGRAPH_ENDPOINT in your .env.local. See walkthrough for details.\n");
 
     // ========================================================================
     // Step 5: Cost & Lockup Analysis (Real-time)
@@ -151,11 +161,11 @@ async function main() {
     console.log("=== Step 5: Cost & Lockup Analysis ===\n");
 
     try {
-        const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
-        const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+        const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
+        const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
 
         console.log("Financial Metrics (Real-time from Chain):");
-        console.log(`  Current Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+        console.log(`  Current Balance: ${formatUnits(paymentBalance, 18)} USDFC`);
 
         if (accountInfo.lockupRate > 0n) {
             const dailyCost = Number(accountInfo.lockupRate) * Number(TIME_CONSTANTS.EPOCHS_PER_DAY) / 1e18;
@@ -183,15 +193,16 @@ async function main() {
     console.log("✅ Historical Analysis Complete!\n");
 
     console.log("You learned:");
-    console.log("  • Connecting to Filecoin subgraphs using SubgraphService");
-    console.log("  • Querying data sets and pieces with typed methods");
-    console.log("  • Analyzing provider performance data");
+    console.log("  • Querying your on-chain data sets with synapse.storage.findDataSets()");
+    console.log("  • Getting provider info from synapse.storage.getStorageInfo()");
+    console.log("  • Prototyping time-series charts with demo data");
+    console.log("  • The subgraph pattern for deep historical event queries");
     console.log("  • Integrating financial metrics from the payment channel\n");
 
     console.log("Dashboard Building Blocks:");
-    console.log("  ✓ Subgraph data feed");
-    console.log("  ✓ Provider reliability widget");
-    console.log("  ✓ Storage activity charts");
+    console.log("  ✓ On-chain data set inventory");
+    console.log("  ✓ Provider list from storage service");
+    console.log("  ✓ Storage activity charts (demo → connect to subgraph)");
     console.log("  ✓ Financial runway calculator");
 }
 

@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, calibration, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -121,9 +122,12 @@ async function main() {
         throw new Error('Missing PRIVATE_KEY in .env file');
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: 'https://api.calibration.node.glif.io/rpc/v1'
+    const account = privateKeyToAccount(privateKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http('https://api.calibration.node.glif.io/rpc/v1'),
+        account,
+        source: null
     });
 
     console.log('✓ SDK initialized successfully\\n');
@@ -131,8 +135,8 @@ async function main() {
     // Get current balance
     console.log('💰 Step 2: Checking Payment Account Balance...\\n');
 
-    const currentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    const balanceFormatted = parseFloat(ethers.formatUnits(currentBalance, 18));
+    const currentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
+    const balanceFormatted = parseFloat(formatUnits(currentBalance, 18));
 
     console.log(`Current Balance: ${balanceFormatted.toFixed(6)} USDFC`);
     console.log();

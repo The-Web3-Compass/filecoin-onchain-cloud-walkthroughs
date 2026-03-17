@@ -60,9 +60,10 @@ Create a file named `index.js` in the `code/` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
-import { writeFileSync, readFileSync } from 'fs';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { createPublicClient, createWalletClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -97,25 +98,30 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const rpcUrl = process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1";
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(rpcUrl),
+        account,
+        source: 'agent-card-walkthrough'
     });
 
-    const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-    );
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const publicClient = createPublicClient({
+        chain: calibration,
+        transport: http(rpcUrl)
+    });
 
     console.log("SDK initialized successfully.");
-    console.log(`Agent Wallet: ${wallet.address}\n`);
+    console.log(`Agent Wallet: ${account.address}\n`);
 
     // ========================================================================
     // Step 2: Verify Payment Readiness
     // ========================================================================
     console.log("=== Step 2: Verify Payment Readiness ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
@@ -129,8 +135,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     console.log(`Storage Operator: ${operatorAddress}`);
     console.log(`Approved: ${approval.isApproved}`);
@@ -209,7 +215,7 @@ async function main() {
     console.log("(This may take 30-60 seconds)\n");
 
     const uploadResult = await synapse.storage.upload(cardBytes, {
-        metadata: {
+        pieceMetadata: {
             type: "agent-card",
             protocol: "ERC-8004",
             agent: agentCard.name,
@@ -222,8 +228,8 @@ async function main() {
     console.log("Upload Response:");
     console.log(`  PieceCID: ${uploadResult.pieceCid}`);
     console.log(`  Size: ${uploadResult.size} bytes`);
-    if (uploadResult.provider) {
-        console.log(`  Provider: ${uploadResult.provider}`);
+    if (uploadResult.copies && uploadResult.copies[0]) {
+        console.log(`  Provider: ${uploadResult.copies[0].providerId}`);
     }
     console.log();
 
@@ -234,7 +240,7 @@ async function main() {
 
     console.log("Downloading card from Filecoin using PieceCID...\n");
 
-    const downloaded = await synapse.storage.download(String(uploadResult.pieceCid));
+    const downloaded = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 
     const downloadedString = new TextDecoder().decode(downloaded);
     const downloadedCard = JSON.parse(downloadedString);
@@ -263,21 +269,26 @@ async function main() {
 
     const REGISTRY_ADDRESS = "0x0000000000000000000000000000000000000000";
     const REGISTRY_ABI = [
-        "function registerAgent(string memory tokenURI) public returns (uint256)",
-        "event AgentRegistered(uint256 indexed agentId, address indexed owner, string tokenURI)"
+        {
+            name: 'registerAgent',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [{ name: 'tokenURI', type: 'string' }],
+            outputs: [{ name: 'agentId', type: 'uint256' }]
+        }
     ];
 
     const tokenURI = `piece://${String(uploadResult.pieceCid)}`;
 
     console.log("Registration Parameters:");
     console.log(`  Registry: ${REGISTRY_ADDRESS} (placeholder)`);
-    console.log(`  Owner: ${wallet.address}`);
+    console.log(`  Owner: ${account.address}`);
     console.log(`  Token URI: ${tokenURI}`);
     console.log();
 
     // Check if a real registry exists at the address
-    const code = await provider.getCode(REGISTRY_ADDRESS);
-    if (code === '0x') {
+    const bytecode = await publicClient.getBytecode({ address: REGISTRY_ADDRESS });
+    if (!bytecode || bytecode === '0x') {
         console.log("Registry contract is not deployed at this address.");
         console.log("In a production deployment, the following transaction would execute:");
         console.log(`  registry.registerAgent("${tokenURI}")`);
@@ -288,11 +299,20 @@ async function main() {
         console.log("  3. Emit an AgentRegistered event with the new agent ID");
         console.log("  4. Map the agent ID to the owner wallet address");
     } else {
-        const registry = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, wallet);
+        const walletClient = createWalletClient({
+            chain: calibration,
+            transport: http(rpcUrl),
+            account
+        });
         try {
-            const tx = await registry.registerAgent(tokenURI);
-            console.log(`Transaction sent: ${tx.hash}`);
-            const receipt = await tx.wait();
+            const txHash = await walletClient.writeContract({
+                address: REGISTRY_ADDRESS,
+                abi: REGISTRY_ABI,
+                functionName: 'registerAgent',
+                args: [tokenURI]
+            });
+            console.log(`Transaction sent: ${txHash}`);
+            await publicClient.waitForTransactionReceipt({ hash: txHash });
             console.log("Registration confirmed on-chain.");
         } catch (error) {
             console.log("Registration transaction failed:", error.message);
@@ -335,7 +355,7 @@ async function main() {
 
     console.log("Key Identifiers:");
     console.log(`  PieceCID: ${uploadResult.pieceCid}`);
-    console.log(`  Agent Wallet: ${wallet.address}`);
+    console.log(`  Agent Wallet: ${account.address}`);
     console.log(`  Token URI: ${tokenURI}\n`);
 
     console.log("Save your PieceCID. You will need it in the next walkthrough");
@@ -357,25 +377,31 @@ This script demonstrates the complete agent identity workflow with detailed logg
 ### SDK and Wallet Initialization
 
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: privateKey,
-    rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+const account = privateKeyToAccount(privateKey);
+
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http(rpcUrl),
+    account,
+    source: 'agent-card-walkthrough'
 });
 
-const provider = new ethers.JsonRpcProvider(
-    process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-);
-const wallet = new ethers.Wallet(privateKey, provider);
+const publicClient = createPublicClient({
+    chain: calibration,
+    transport: http(rpcUrl)
+});
 ```
 
-We initialize two connections to the Filecoin network. The Synapse SDK handles storage and payment operations — uploading the card, checking balances, verifying operator approvals. The ethers.js provider and wallet handle direct blockchain interactions — reading contract code, simulating registration transactions.
+We initialize two connections to the Filecoin network. The Synapse SDK handles storage and payment operations — uploading the card, checking balances, verifying operator approvals. Note that `Synapse.create()` is synchronous (no `await`) — it sets up the client configuration without any network calls. The `publicClient` from viem handles direct blockchain reads — checking contract bytecode and reading on-chain state.
+
+The `account` object created by `privateKeyToAccount()` holds the agent's signing key. The `source` parameter is a short label used for telemetry and can be set to `null` to opt out.
 
 In a production agent, the private key represents the agent's own identity. This is the key that owns the agent's on-chain registration. Whoever controls this key controls the agent's identity. The security implications are significant: if this key is compromised, an attacker can update the agent's metadata, redirect its endpoints, or transfer ownership entirely.
 
 ### Payment Verification
 
 ```javascript
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
 
 if (paymentBalance === 0n) {
     console.log("\nPayment account has no balance.");
@@ -390,8 +416,8 @@ This check prevents confusing errors later. If you attempt an upload with an unf
 ### Operator Approval Verification
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const operatorAddress = synapse.chain.contracts.fwss.address;
+const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
 if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
     console.log("\nStorage operator is not approved to charge this account.");
@@ -399,7 +425,7 @@ if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllo
 }
 ```
 
-Even with funds, uploads fail if the storage operator lacks permission to charge the payment account. The `serviceApproval()` method returns an object with three critical fields: `isApproved` (boolean), `rateAllowance` (maximum charge rate per epoch), and `lockupAllowance` (maximum total lockup). All three must be valid for uploads to succeed.
+Even with funds, uploads fail if the storage operator lacks permission to charge the payment account. The FWSS contract address is available directly on the synapse instance at `synapse.chain.contracts.fwss.address`. The `serviceApproval()` method takes an options object and returns an object with three critical fields: `isApproved` (boolean), `rateAllowance` (maximum charge rate per epoch), and `lockupAllowance` (maximum total lockup). All three must be valid for uploads to succeed.
 
 ### Agent Card Construction
 
@@ -432,7 +458,7 @@ The `engine` field tells other systems how to run the agent. The `endpoints` fie
 const cardBytes = Buffer.from(JSON.stringify(agentCard));
 
 const uploadResult = await synapse.storage.upload(cardBytes, {
-    metadata: {
+    pieceMetadata: {
         type: "agent-card",
         protocol: "ERC-8004",
         agent: agentCard.name,
@@ -441,7 +467,7 @@ const uploadResult = await synapse.storage.upload(cardBytes, {
 });
 ```
 
-We serialize the Agent Card to JSON bytes and upload using the Synapse SDK. The `metadata` parameter attaches key-value pairs to the piece on-chain. These metadata fields are stored alongside the storage deal and can be queried later.
+We serialize the Agent Card to JSON bytes and upload using the Synapse SDK. The `pieceMetadata` field in the options object attaches key-value pairs to the piece on-chain. These metadata fields are stored alongside the storage deal and can be queried later.
 
 Piece metadata is limited to 5 key-value pairs, with keys up to 32 characters and values up to 128 characters. We use four fields here: `type` identifies this as an agent card, `protocol` specifies the standard, `agent` names the agent, and `version` tracks the card version. This metadata enables filtering — you could query "show me all agent-card pieces" or "find all ERC-8004 pieces for StorageOptimizer v1."
 
@@ -450,7 +476,7 @@ The upload returns a `pieceCid` — the content-addressed identifier for the sto
 ### Download and Verification
 
 ```javascript
-const downloaded = await synapse.storage.download(String(uploadResult.pieceCid));
+const downloaded = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 
 const downloadedString = new TextDecoder().decode(downloaded);
 const downloadedCard = JSON.parse(downloadedString);
@@ -459,7 +485,7 @@ const originalBytes = JSON.stringify(agentCard);
 const matches = downloadedString === originalBytes;
 ```
 
-After uploading, we immediately download the card using its PieceCID and verify the content matches the original. The `download()` method takes a PieceCID string directly. We use `String()` to convert the `PieceLink` object returned by the upload into a plain string. This demonstrates a critical property of content-addressed storage: the PieceCID guarantees you receive exactly what was stored. If the provider returned different bytes, the PieceCID would not match, and the SDK would reject the response.
+After uploading, we immediately download the card using its PieceCID and verify the content matches the original. The `download()` method takes an options object with a `pieceCid` field — the `PieceCID` object returned by the upload is passed directly without needing `String()` conversion. This demonstrates a critical property of content-addressed storage: the PieceCID guarantees you receive exactly what was stored. If the provider returned different bytes, the PieceCID would not match, and the SDK would reject the response.
 
 The verification step compares the downloaded string against the original JSON serialization. If they match, the card was stored and retrieved without any alteration. This is the foundation of trustless identity — you do not need to trust the storage provider because the mathematics of content addressing prove data integrity.
 
@@ -469,8 +495,8 @@ The verification step compares the downloaded string against the original JSON s
 const REGISTRY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const tokenURI = `piece://${String(uploadResult.pieceCid)}`;
 
-const code = await provider.getCode(REGISTRY_ADDRESS);
-if (code === '0x') {
+const bytecode = await publicClient.getBytecode({ address: REGISTRY_ADDRESS });
+if (!bytecode || bytecode === '0x') {
     console.log("Registry contract is not deployed at this address.");
     // Simulation output...
 }

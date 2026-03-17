@@ -223,20 +223,19 @@ Because Filecoin permissions are programmable smart contracts, you can revoke sp
 **The Code**
 
 ```javascript
-async function triggerCircuitBreaker(operatorAddress) {
+async function triggerCircuitBreaker(synapse) {
     console.log("🚨 EMERGENCY: TRIGGERING CIRCUIT BREAKER");
-    
+
     // We set the allowance to ZERO.
     // This transaction effectively freezes the operator's ability to charge you.
-    const tx = await synapse.payments.setAllowance(
-        operatorAddress,
-        TOKENS.USDFC,
-        0, // Rate Allowance = 0
-        0, // Lockup Allowance = 0
-        0  // Expiration = Now
-    );
-    
-    await tx.wait();
+    const hash = await synapse.payments.approveService({
+        service: synapse.chain.contracts.fwss.address,
+        rateAllowance: 0n,     // Rate Allowance = 0
+        lockupAllowance: 0n,   // Lockup Allowance = 0
+        maxLockupPeriod: 0n    // Expiration = Now
+    });
+
+    await synapse.client.waitForTransactionReceipt({ hash });
     console.log("✅ Circuit Breaker Active. No further charges possible.");
 }
 ```

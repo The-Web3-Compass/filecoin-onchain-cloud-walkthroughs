@@ -53,7 +53,9 @@ Create `index.js` in the `code/` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import nodemailer from 'nodemailer';
 
 dotenv.config({ path: '.env.local' });
@@ -136,30 +138,30 @@ const alertRules = [
         name: 'Low Balance Warning',
         severity: 'warning',
         condition: async (ctx) => {
-            const balance = Number(ctx.balance) / 1e18;
+            const balance = Number(ctx.paymentBalance) / 1e18;
             return balance < LOW_BALANCE_THRESHOLD && balance >= CRITICAL_BALANCE_THRESHOLD;
         },
-        message: (ctx) => `Balance is low: ${(Number(ctx.balance) / 1e18).toFixed(4)} USDFC`
+        message: (ctx) => `Balance is low: ${(Number(ctx.paymentBalance) / 1e18).toFixed(4)} USDFC`
     },
     {
         id: 'critical_balance',
         name: 'Critical Balance Alert',
         severity: 'critical',
         condition: async (ctx) => {
-            const balance = Number(ctx.balance) / 1e18;
+            const balance = Number(ctx.paymentBalance) / 1e18;
             return balance < CRITICAL_BALANCE_THRESHOLD;
         },
-        message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${(Number(ctx.balance) / 1e18).toFixed(4)} USDFC`
+        message: (ctx) => `CRITICAL: Balance below ${CRITICAL_BALANCE_THRESHOLD} USDFC! Current: ${(Number(ctx.paymentBalance) / 1e18).toFixed(4)} USDFC`
     },
     {
         id: 'operator_not_approved',
         name: 'Operator Not Approved',
         severity: 'error',
         condition: async (ctx) => {
-            const approval = await ctx.synapse.payments.serviceApproval(
-                ctx.synapse.getWarmStorageAddress(),
-                TOKENS.USDFC
-            );
+            // Contract addresses are now read from synapse.chain.contracts
+            const operatorAddress = ctx.synapse.chain.contracts.fwss.address;
+            // serviceApproval() now takes an options object { service, token }
+            const approval = await ctx.synapse.payments.serviceApproval({ service: operatorAddress });
             return !approval.isApproved;
         },
         message: () => 'Storage operator is not approved. Storage operations will fail.'
@@ -196,8 +198,9 @@ In production, you might add rules for:
 ## Step 4: Evaluating Conditions
 
 ```javascript
-const balance = await synapse.payments.balance(TOKENS.USDFC);
-const context = { synapse, balance };
+// balance() now takes an options object { token } instead of a positional arg
+const balance = await synapse.payments.balance({ token: TOKENS.USDFC });
+const context = { synapse, paymentBalance: balance };
 
 const triggeredAlerts = [];
 

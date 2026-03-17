@@ -87,6 +87,7 @@ import { Synapse, TOKENS } from '@filoz/synapse-sdk';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Get the directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -101,50 +102,49 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'first-upload-tutorial'
     });
 
     console.log("✓ SDK initialized\n");
 
-    // Step 1: Verify payment account balance
-    console.log("=== Step 1: Verify Payment Account Balance ===");
-    
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Payment Account (USDFC): ${paymentBalance.toString()} (raw units)`);
-    
-    if (paymentBalance === 0n) {
-        console.log("\n⚠️  Warning: Payment account has no balance!");
-        console.log("Please run the payment-management tutorial first to fund your account.");
-        process.exit(1);
-    }
-    
-    console.log("✓ Payment account is funded\n");
+    // Step 1: Read the sample file
+    console.log("=== Step 1: Load Upload Data ===");
 
-    // Add explicit allowance check
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("⚠️  Warning: Operator allowances are not set!");
-        console.log("The storage provider cannot charge your account without approval.");
-        console.log("Please run the payment-management tutorial (or fix-allowance.js) first.");
-        process.exit(1);
-    }
-    console.log("✓ Operator allowances verified\n");
-
-    // Step 2: Read the sample file
-    console.log("=== Step 2: Load Upload Data ===");
-    
     const sampleFilePath = join(__dirname, './data/sample.txt');
     const fileContent = readFileSync(sampleFilePath);
     const fileSize = fileContent.length;
-    
+
     console.log(`File Path: ${sampleFilePath}`);
     console.log(`File Size: ${fileSize} bytes`);
     console.log(`First 100 characters: ${fileContent.toString().substring(0, 100)}...`);
     console.log();
+
+    // Step 2: Prepare storage & verify payment capabilities
+    console.log("=== Step 2: Prepare Storage & Verify Payments ===");
+    
+    // Abstracted calculation of cost and payment/approval steps
+    const prep = await synapse.storage.prepare({
+        dataSize: BigInt(fileSize)
+    });
+
+    if (!prep.costs.ready) {
+        if (prep.transaction) {
+            console.log("Submitting required payment and approval transaction...");
+            const { hash } = await prep.transaction.execute();
+            await synapse.client.waitForTransactionReceipt({ hash });
+            console.log(`✓ Payment setup confirmed\n`);
+        } else {
+            console.log("\n⚠️  Warning: Payment account is not ready and no transactions could be generated.");
+            console.log("Please run the payment-management tutorial first to fund your wallet.");
+            process.exit(1);
+        }
+    } else {
+        console.log("✓ Payment account is funded and ready\n");
+    }
 
     // Step 3: Upload to Filecoin
     console.log("=== Step 3: Upload to Filecoin Network ===");
@@ -157,24 +157,20 @@ async function main() {
 
     // Step 4: Examine Upload Response
     console.log("=== Step 4: Upload Response Details ===");
-    
+
     console.log(`PieceCID: ${uploadResult.pieceCid}`);
     console.log(`  → This is your data's unique identifier on Filecoin`);
     console.log(`  → Format: Starts with 'bafkzcib' (64-65 characters)`);
     console.log(`  → Use this to retrieve your data from any provider`);
     console.log();
-    
-    console.log(`Size: ${uploadResult.size} bytes`);
-    console.log(`  → Verified size of your uploaded data`);
-    console.log(`  → Matches original file: ${uploadResult.size === fileSize ? '✓' : '✗'}`);
+
+    console.log(`Copies stored: ${uploadResult.copies.length}`);
+    console.log(`Upload Complete: ${uploadResult.complete ? '✓' : '✗'}`);
     console.log();
 
-    if (uploadResult.provider) {
-        console.log(`Provider: ${uploadResult.provider}`);
-        console.log(`  → Storage provider address storing your data`);
-        console.log(`  → SDK automatically selected this provider for you`);
+    if (uploadResult.failedAttempts.length > 0) {
+        console.log(`Note: There were ${uploadResult.failedAttempts.length} failed attempts during upload.`);
     }
-    console.log();
 
     // Step 5: Verify data on-chain
     console.log("=== Step 5: On-Chain Verification ===");
@@ -212,36 +208,17 @@ const __dirname = dirname(__filename);
 
 ES modules do not provide `__dirname` and `__filename` globals that CommonJS offers. These lines reconstruct them using `import.meta.url`. This lets us build file paths relative to the script location, which matters for loading the sample file reliably regardless of where you run the command from.
 
-### Payment Balance Verification
+### Payment and Allowance Verification
 
 ```javascript
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-
-if (paymentBalance === 0n) {
-    console.log("\n⚠️  Warning: Payment account has no balance!");
-    process.exit(1);
-}
+const prep = await synapse.storage.prepare({
+    dataSize: BigInt(fileSize)
+});
 ```
 
-Before attempting an upload, we verify the payment account holds funds. The `balance()` method returns a BigInt representing your payment account balance in the smallest USDFC units (wei-equivalent).
+Before attempting an upload, we verify the payment account holds adequate funds and is ready to cover the cost of the storage deal using `synapse.storage.prepare()`. Checking balance and executing preparation proactively prevents confusing errors later.
 
-Checking balance proactively prevents confusing errors later. If you attempt an upload with an unfunded account, the storage provider would reject the operation, but the error message might not clearly indicate the payment account issue. Explicit verification provides clarity.
-
-### Allowance Verification
-
-```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-    console.log("⚠️  Warning: Operator allowances are not set!");
-    process.exit(1);
-}
-```
-
-We also verify that the storage operator has permission to charge your account. The `serviceApproval()` method checks both rate and lockup allowances.
-
-This is a defensive check. If you skipped the previous walkthrough or if your allowances were not successfully set (e.g., due to the "eventual consistency" issue discussed previously), the upload would fail at the payment step. Catching this early allows us to provide a helpful error message directing you to fix the permission issue.
+If `prep.costs.ready` is true, the upload is fully funded and cleared. If not, `prep.transaction` contains a single pre-built transaction that handles deposit and operator approval in one step — call `prep.transaction.execute()` to submit it.
 
 ### File Loading
 
@@ -253,7 +230,7 @@ const fileSize = fileContent.length;
 
 We load a sample text file from the `data/` directory. Using `readFileSync` returns a Buffer, which the SDK accepts directly. For production applications handling user uploads, you would typically stream data instead of loading it entirely into memory, especially for larger files.
 
-The SDK enforces size constraints: minimum 127 bytes, maximum 200 MiB. Files below 127 bytes cannot generate valid PieceCIDs. Files above 200 MiB require chunking, which the current SDK version does not support automatically. Our sample file falls comfortably within these bounds.
+The SDK enforces size constraints: minimum 127 bytes, maximum ~1 GiB (1,065,353,216 bytes). Files below 127 bytes cannot generate valid PieceCIDs. Files above ~1 GiB require chunking, which the current SDK version does not support automatically. Our sample file falls comfortably within these bounds.
 
 ### The Upload Operation
 
@@ -277,19 +254,19 @@ The beauty of the SDK is that this complexity gets abstracted into one method ca
 
 ```javascript
 console.log(`PieceCID: ${uploadResult.pieceCid}`);
-console.log(`Size: ${uploadResult.size} bytes`);
-if (uploadResult.provider) {
-    console.log(`Provider: ${uploadResult.provider}`);
-}
+console.log(`Copies stored: ${uploadResult.copies.length}`);
+console.log(`Upload Complete: ${uploadResult.complete ? '✓' : '✗'}`);
 ```
 
-The upload result contains three critical fields:
+The upload result contains critical fields that assert the network holds your data:
 
 **pieceCid**: Your data's unique content identifier. This is what you will use to retrieve the data later. It is a string in the format `bafkzcib...` (64-65 characters). Store this somewhere permanent if the data matters beyond this tutorial.
 
-**size**: The size of your uploaded data in bytes. This should match your original file size. The SDK uses this for verification and cost calculations.
+**copies**: An array of successful copy objects, one per storage provider. Each entry contains `providerId`, `dataSetId`, `pieceId`, and `role` (`'primary'` or `'secondary'`). Use `copies.length` to get the count.
 
-**provider**: The Ethereum address of the storage provider holding your data. The SDK selects providers based on availability, capacity, and pricing. You typically do not need to interact with provider addresses directly, but seeing which provider holds your data can be useful for debugging or optimization.
+**complete**: A boolean value indicating if all requested copies succeeded. `upload()` only throws when zero copies succeed — always check `complete` to confirm all copies were stored.
+
+**failedAttempts**: An array of providers that were tried but did not produce a copy. Non-empty doesn't mean failure — the SDK retries failed secondaries automatically. Check `complete` for the actual outcome.
 
 ### On-Chain Verification Guidance
 
@@ -323,16 +300,13 @@ Uploading Your First File to Filecoin...
 
 ✓ SDK initialized
 
-=== Step 1: Verify Payment Account Balance ===
-Payment Account Balance: 5000000000000000000 (raw units)
-✓ Payment account is funded
-
-=== Step 2: Load Upload Data ===
+=== Step 1: Load Upload Data ===
 File Path: /path/to/first-upload/data/sample.txt
 File Size: 459 bytes
 First 100 characters: 🚀 Filecoin Onchain Cloud - Sample Upload File 🌍
 
-This is your first file stored on the File...
+=== Step 2: Prepare Storage & Verify Payments ===
+✓ Payment account is funded and ready
 
 === Step 3: Upload to Filecoin Network ===
 Uploading file...
@@ -346,13 +320,8 @@ PieceCID: bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq
   → Format: Starts with 'bafkzcib' (64-65 characters)
   → Use this to retrieve your data from any provider
 
-Size: 512 bytes
-  → Verified size of your uploaded data
-  → Matches original file: ✓
-
-Provider: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
-  → Storage provider address storing your data
-  → SDK automatically selected this provider for you
+Copies stored: 1
+Upload Complete: ✓
 
 === Step 5: On-Chain Verification ===
 Your data is now stored on Filecoin!
@@ -458,7 +427,7 @@ This tutorial demonstrated upload mechanics with a tiny text file. Production de
 
 ### File Size Strategy
 
-The current SDK supports files up to 200 MiB. For larger datasets, you need to split data into chunks. Each chunk uploads separately and receives its own PieceCID. Your application must track which PieceCIDs compose the complete dataset.
+The current SDK supports files up to ~1 GiB. For larger datasets, you need to split data into chunks. Each chunk uploads separately and receives its own PieceCID. Your application must track which PieceCIDs compose the complete dataset.
 
 Future SDK versions will support automatic chunking and aggregate PieceCIDs, but for now, implement chunking at the application level if needed.
 
@@ -555,7 +524,7 @@ Files must be at least 127 bytes. Pad smaller files with whitespace or combine m
 
 **"File size too large" error**
 
-The SDK currently supports maximum 200 MiB uploads. Split larger files into chunks and upload separately, tracking PieceCIDs in your application.
+The SDK currently supports maximum ~1 GiB uploads. Split larger files into chunks and upload separately, tracking PieceCIDs in your application.
 
 
 

@@ -106,7 +106,8 @@ This generates a default `package.json`. Open it and modify it to enable ES modu
     "start": "node index.js"
   },
   "dependencies": {
-    "@filoz/synapse-sdk": "^0.36.1",
+    "@filoz/synapse-sdk": "^0.39.0",
+    "viem": "^2.0.0",
     "dotenv": "^16.4.5"
   }
 }
@@ -120,9 +121,10 @@ The `"type": "module"` line is critical. The Synapse SDK uses ES module imports,
 npm install
 ```
 
-Two packages handle everything this walkthrough needs:
+Three packages handle everything this walkthrough needs:
 
 - **@filoz/synapse-sdk** provides the interface to Filecoin — wallet operations, storage interactions, and payment account management. It abstracts the blockchain plumbing into straightforward method calls.
+- **viem** is the Ethereum client library the Synapse SDK uses under the hood. You need it directly to create a wallet account from your private key.
 - **dotenv** loads your private key from environment variables, keeping secrets out of source code.
 
 **Configure your environment:**
@@ -149,12 +151,9 @@ This is not a suggestion. Bots scan GitHub continuously for exposed private keys
 Create a file named `index.js` in your project directory:
 
 ```javascript
-import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("User-Pays Architecture Demo\n");
@@ -167,9 +166,13 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: userPrivateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedKey = userPrivateKey.startsWith('0x')
+        ? userPrivateKey
+        : `0x${userPrivateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedKey),
+        source: 'user-pays-demo'
     });
 
     console.log("=== Step 1: SDK Initialized ===");
@@ -179,9 +182,11 @@ async function main() {
     // Step 2: Check Payment Account Balance
     console.log("=== Step 2: Payment Account Balance ===");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance();
+    const paymentBalance = await synapse.payments.balance();
     const balanceFormatted = Number(paymentBalance) / 1e18;
 
+    console.log(`Wallet Balance: ${(Number(walletBalance) / 1e18).toFixed(4)} USDFC`);
     console.log(`Payment Account Balance: ${paymentBalance.toString()} (raw units)`);
     console.log(`Formatted: ${balanceFormatted.toFixed(4)} USDFC`);
 
@@ -193,27 +198,8 @@ async function main() {
 
     console.log("Payment account is funded.\n");
 
-    // Step 3: Verify Operator Approval
-    console.log("=== Step 3: Operator Approval ===");
-
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    console.log(`Storage Operator: ${operatorAddress}`);
-    console.log(`Approved: ${approval.isApproved}`);
-    console.log(`Rate Allowance: ${approval.rateAllowance.toString()}`);
-    console.log(`Lockup Allowance: ${approval.lockupAllowance.toString()}`);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("\nStorage operator is not approved to charge this user.");
-        console.log("Please run the payment-management tutorial first.");
-        process.exit(1);
-    }
-
-    console.log("Operator is approved.\n");
-
-    // Step 4: Execute Storage Operation
-    console.log("=== Step 4: Upload Execution ===");
+    // Step 3: Verify Payment Readiness
+    console.log("=== Step 3: Payment Readiness ===");
 
     const sampleData = Buffer.from(
         `User-Pays Demo File\n` +
@@ -223,6 +209,20 @@ async function main() {
         `Minimum upload size is 127 bytes.`
     );
 
+    const prep = await synapse.storage.prepare({
+        dataSize: BigInt(sampleData.length)
+    });
+
+    if (!prep.costs.ready) {
+        console.log("\nPayment account needs additional funds or approvals for this upload.");
+        console.log("Please run the payment-management tutorial first.");
+        process.exit(1);
+    }
+
+    console.log("Payment account is ready for storage operations.\n");
+
+    // Step 4: Execute Storage Operation
+    console.log("=== Step 4: Upload Execution ===");
     console.log(`Uploading ${sampleData.length} bytes...`);
     console.log("(This may take 30-60 seconds)\n");
 
@@ -231,10 +231,7 @@ async function main() {
 
         console.log("Upload successful.");
         console.log(`PieceCID: ${result.pieceCid}`);
-        console.log(`Size: ${result.size} bytes`);
-        if (result.provider) {
-            console.log(`Provider: ${result.provider}`);
-        }
+        console.log(`Copies stored: ${result.copies.length}`);
     } catch (error) {
         console.error("Upload failed:", error.message);
         process.exit(1);
@@ -243,7 +240,7 @@ async function main() {
     // Step 5: Verify Payment Rail
     console.log("\n=== Step 5: Payment Verification ===");
 
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await synapse.payments.getRailsAsPayer({});
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Total payment rails: ${rails.length}`);
@@ -259,7 +256,7 @@ async function main() {
     console.log("\n=== Summary ===");
     console.log("User-Pays architecture complete.");
     console.log("- SDK initialized with user wallet credentials");
-    console.log("- Verified user has funds and approvals");
+    console.log("- Verified user has funds and payment is ready");
     console.log("- Executed an upload paid by user's payment account");
     console.log("- Application never held or managed any funds");
 }
@@ -277,22 +274,27 @@ This script demonstrates the complete User-Pays workflow with explicit verificat
 ### Wallet Connection
 
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: userPrivateKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+const formattedKey = userPrivateKey.startsWith('0x')
+    ? userPrivateKey
+    : `0x${userPrivateKey}`;
+
+const synapse = Synapse.create({
+    account: privateKeyToAccount(formattedKey),
+    source: 'user-pays-demo'
 });
 ```
 
-In this demo, we use a private key from the environment file. In a production web application, this would connect to the user's browser wallet (MetaMask, WalletConnect, etc.) instead.
+`Synapse.create()` is now synchronous — no `await` needed. The `privateKeyToAccount()` function from viem converts the raw private key into a full account object that the SDK uses for signing. The `source` parameter is required and serves as a namespace identifier for your application's data sets — it ensures uploads from this application are tracked separately from other applications sharing the same wallet.
+
+In this demo, we use a private key from the environment file. In a production web application, you would use viem's `custom()` transport to connect to MetaMask or WalletConnect, receiving an `account` from the user's browser wallet instead.
 
 The critical distinction: **the user controls this key, not your application**. Your application receives signing capabilities temporarily during the session. When the user closes their browser or disconnects, your access ends. You never store or manage user private keys.
-
-This is the fundamental difference from traditional Web2 applications where you might store user credentials in a database. In User-Pays architecture, authentication happens through the user's wallet, and authorization for any operation requires their active participation.
 
 ### Balance Verification
 
 ```javascript
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const walletBalance = await synapse.payments.walletBalance();
+const paymentBalance = await synapse.payments.balance();
 
 if (paymentBalance === 0n) {
     // Block the operation
@@ -300,7 +302,7 @@ if (paymentBalance === 0n) {
 }
 ```
 
-Before attempting any storage operation, we check if the user has funds. The `balance()` method returns a BigInt representing USDFC in wei (18 decimal places).
+We check two separate balances. `walletBalance()` returns the USDFC sitting in the user's on-chain wallet — not yet usable for storage. `balance()` returns the USDFC already deposited into the payment account, which is what actually pays for storage operations. Both methods default to USDFC and return a BigInt in wei (18 decimal places).
 
 This verification serves multiple purposes:
 
@@ -310,42 +312,42 @@ This verification serves multiple purposes:
 
 **Application logic**: Your application might display different UI depending on whether users are funded. A photo sharing app might show "Upload Photo" only when balance is sufficient, or display "Fund Account" prompts otherwise.
 
-### Operator Approval Verification
+### Payment Readiness Check
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const prep = await synapse.storage.prepare({
+    dataSize: BigInt(sampleData.length)
+});
 
-if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
+if (!prep.costs.ready) {
     // Block the operation
     process.exit(1);
 }
 ```
 
-Even with funds, uploads fail if the storage operator lacks permission to charge the payment account. The approval object contains three critical fields:
+`prepare()` is the SDK's single-call answer to "can this account afford this upload right now?" It checks both the deposited balance and the operator approvals in one shot, and returns a `costs` object with a `ready` boolean. If anything is missing — insufficient deposit, missing approval — `ready` is `false`.
 
-- `isApproved`: Boolean indicating whether any approval exists
-- `rateAllowance`: Maximum rate (USDFC per epoch) the operator can charge
-- `lockupAllowance`: Maximum total lockup the operator can create
+This replaces the older pattern of manually calling `getWarmStorageAddress()` and `serviceApproval()` separately. The SDK handles those checks internally, so your application just needs to react to the result.
 
-All three must be valid for uploads to succeed. The SDK method `getWarmStorageAddress()` returns the Warm Storage operator address, which is the default operator for simple uploads.
-
-In User-Pays architecture, users typically set up these approvals during onboarding (when they first fund their account). Your application verifies approvals exist but does not create them - that would require user action.
+In User-Pays architecture, users typically set up deposits and approvals during onboarding via the payment-management walkthrough. Your application's job is to verify readiness and gate operations accordingly — not to create approvals on the user's behalf.
 
 ### Upload Execution
 
 ```javascript
 const result = await synapse.storage.upload(sampleData);
+
+console.log(`PieceCID: ${result.pieceCid}`);
+console.log(`Copies stored: ${result.copies.length}`);
 ```
 
-With verified funds and approvals, the upload executes exactly as in previous walkthroughs. The difference is conceptual: **the user's credentials authorize this operation, and the user's payment account pays for it**.
+With verified funds and readiness confirmed, the upload executes exactly as in previous walkthroughs. The result includes a `pieceCid` — the cryptographic identifier for your data on Filecoin — and a `copies` array showing how many storage providers received the data. The difference is conceptual: **the user's credentials authorize this operation, and the user's payment account pays for it**.
 
 Your application's role is facilitation. You prepared the data, called the SDK method, and handled the result. But the economic relationship is directly between the user and the storage provider. You are not a party to that transaction.
 
 ### Payment Rail Verification
 
 ```javascript
-const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+const rails = await synapse.payments.getRailsAsPayer({});
 ```
 
 Payment rails are the on-chain streams that transfer USDFC from payer to provider over time. By querying rails where the user is the payer, we confirm the economic relationship we expected: the user pays directly.
@@ -374,32 +376,26 @@ User-Pays Architecture Demo
 In this model, the user controls their wallet and pays for storage directly.
 The application facilitates operations but never handles funds.
 
-=== Step 1: Wallet Connection ===
-Connected wallet: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
-In production, this address comes from the user's browser wallet.
+=== Step 1: SDK Initialized ===
+SDK connected with user's wallet credentials.
+In production, this would connect to MetaMask or WalletConnect.
 
 === Step 2: Payment Account Balance ===
-Payment Account Balance: 5000000000000000000 wei
+Wallet Balance: 5.0000 USDFC
+Payment Account Balance: 5000000000000000000 (raw units)
 Formatted: 5.0000 USDFC
-Payment account is funded. User can pay for storage.
+Payment account is funded.
 
-=== Step 3: Operator Approval ===
-Storage Operator: 0x1234567890abcdef...
-Approved: true
-Rate Allowance: 115792089237316195423570985008687907853269984665640564039457584007913129639935
-Lockup Allowance: 115792089237316195423570985008687907853269984665640564039457584007913129639935
-Operator is approved. Storage provider can charge the user.
+=== Step 3: Payment Readiness ===
+Payment account is ready for storage operations.
 
 === Step 4: Upload Execution ===
-User is ready for storage operations.
-
-Uploading 156 bytes...
+Uploading 196 bytes...
 (This may take 30-60 seconds)
 
 Upload successful.
 PieceCID: bafkzcibca3mms52by4xvzpi7dn62eo62xmpp5pwrx7hm6fty2cxl5c47fm2kq
-Size: 512 bytes
-Provider: 0x9876543210fedcba...
+Copies stored: 1
 
 === Step 5: Payment Verification ===
 Total payment rails: 3
@@ -407,15 +403,14 @@ Active rails: 1
 
 Most recent rail:
   Rail ID: 42
-  Payer: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1
-  This confirms the user is paying directly for their storage.
+  This confirms the user is paying directly for storage.
 
 === Summary ===
 User-Pays architecture complete.
-- The application connected to the user's wallet
-- Verified the user has funds and approvals
-- Executed an upload that the user paid for directly
-- The application never held or managed any funds
+- SDK initialized with user wallet credentials
+- Verified user has funds and payment is ready
+- Executed an upload paid by user's payment account
+- Application never held or managed any funds
 ```
 
 The upload succeeded with the user as the direct payer.
@@ -487,17 +482,25 @@ The next walkthrough covers the opposite approach: dApp-Pays, where your applica
 
 ### Wallet Integration
 
-The demo uses a private key for simplicity. Production applications should integrate proper wallet connection:
+The demo uses a private key for simplicity. Production applications should integrate proper wallet connection using viem's wallet client:
 
 ```javascript
-// Example with ethers and MetaMask (conceptual)
-import { BrowserProvider } from 'ethers';
+// Example with MetaMask (conceptual)
+import { createWalletClient, custom } from 'viem';
+import { calibration } from '@filoz/synapse-sdk';
 
-const provider = new BrowserProvider(window.ethereum);
-const signer = await provider.getSigner();
-const userAddress = await signer.getAddress();
+const walletClient = createWalletClient({
+    chain: calibration,
+    transport: custom(window.ethereum)
+});
 
-// Then use this signer with the Synapse SDK
+const [userAddress] = await walletClient.getAddresses();
+
+// Then initialize Synapse with the connected account
+const synapse = Synapse.create({
+    account: userAddress,
+    source: 'your-app'
+});
 ```
 
 The Synapse SDK's React package (`@filoz/synapse-react`) provides hooks that simplify wallet integration for React applications.
@@ -509,32 +512,35 @@ Display real-time balance information so users understand their funding status:
 ```javascript
 // Component that shows current balance
 async function displayBalance(synapse) {
-    const balance = await synapse.payments.balance(TOKENS.USDFC);
+    const balance = await synapse.payments.balance();
     const formatted = Number(balance) / 1e18;
-    
+
     console.log(`Available: ${formatted.toFixed(4)} USDFC`);
-    
+
     // Also show locked funds
-    const info = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const info = await synapse.payments.accountInfo();
     const locked = Number(info.lockupCurrent) / 1e18;
     console.log(`Locked: ${locked.toFixed(4)} USDFC`);
 }
 ```
 
-### Approval Management
+### Payment Readiness Check
 
-Help users understand and manage their operator approvals:
+Check payment readiness before showing upload UI:
 
 ```javascript
-async function checkApprovals(synapse) {
-    const operator = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operator, TOKENS.USDFC);
-    
-    if (!approval.isApproved) {
-        // Guide user to set up approvals
-        console.log("You need to approve the storage operator before uploading.");
-        console.log("Run the payment-management walkthrough to configure approvals.");
+async function checkReadiness(synapse, dataSize) {
+    const prep = await synapse.storage.prepare({
+        dataSize: BigInt(dataSize)
+    });
+
+    if (!prep.costs.ready) {
+        // Guide user to fund their account or set up approvals
+        console.log("Your payment account is not ready for this upload size.");
+        console.log("Run the payment-management walkthrough to configure your account.");
+        return false;
     }
+    return true;
 }
 ```
 

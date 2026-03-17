@@ -32,9 +32,15 @@
         },
         {
             "id": 4,
-            "type": "fill-in-the-blank",
-            "question": "The SubgraphService provides _____ methods to query data instead of raw GraphQL.",
-            "answerHash": "2259e961582c9ae17235db655c751ddb198605c3bea788a4170a8baa3511c614"
+            "type": "multiple-choice",
+            "question": "Which SDK method queries all data sets associated with your wallet directly from the on-chain contract?",
+            "options": [
+                "synapse.storage.findDataSets()",
+                "synapse.payments.getDataSets()",
+                "synapse.storage.queryHistory()",
+                "synapse.getStorageInfo()"
+            ],
+            "answerHash": "b77ebed37eb63ef851c39a6f5a88afd7ef85f7f22f1d6fb3e3df5b01e3fa4781"
         },
         {
             "id": 5,

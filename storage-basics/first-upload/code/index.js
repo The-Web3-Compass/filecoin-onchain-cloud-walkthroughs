@@ -3,6 +3,7 @@ import { Synapse, TOKENS } from '@filoz/synapse-sdk';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Get the directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -17,41 +18,17 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'first-upload-tutorial'
     });
 
     console.log("✓ SDK initialized\n");
 
-    // Step 1: Verify payment account balance
-    console.log("=== Step 1: Verify Payment Account Balance ===");
-
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Payment Account (USDFC): ${paymentBalance.toString()} (raw units)`);
-
-    if (paymentBalance === 0n) {
-        console.log("\n⚠️  Warning: Payment account has no balance!");
-        console.log("Please run the payment-management tutorial first to fund your account.");
-        process.exit(1);
-    }
-
-    console.log("✓ Payment account is funded\n");
-
-    // Add explicit allowance check
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
-
-    if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-        console.log("⚠️  Warning: Operator allowances are not set!");
-        console.log("The storage provider cannot charge your account without approval.");
-        console.log("Please run the payment-management tutorial (or fix-allowance.js) first.");
-        process.exit(1);
-    }
-    console.log("✓ Operator allowances verified\n");
-
-    // Step 2: Read the sample file
-    console.log("=== Step 2: Load Upload Data ===");
+    // Step 1: Read the sample file
+    console.log("=== Step 1: Load Upload Data ===");
 
     const sampleFilePath = join(__dirname, './data/sample.txt');
     const fileContent = readFileSync(sampleFilePath);
@@ -61,6 +38,28 @@ async function main() {
     console.log(`File Size: ${fileSize} bytes`);
     console.log(`First 100 characters: ${fileContent.toString().substring(0, 100)}...`);
     console.log();
+
+    // Step 2: Prepare storage & verify payment capabilities
+    console.log("=== Step 2: Prepare Storage & Verify Payments ===");
+
+    const prep = await synapse.storage.prepare({
+        dataSize: BigInt(fileSize)
+    });
+
+    if (!prep.costs.ready) {
+        if (prep.transaction) {
+            console.log("Submitting required payment and approval transaction...");
+            const { hash } = await prep.transaction.execute();
+            await synapse.client.waitForTransactionReceipt({ hash });
+            console.log(`✓ Payment setup confirmed\n`);
+        } else {
+            console.log("\n⚠️  Warning: Payment account is not ready and no transactions could be generated.");
+            console.log("Please run the payment-management tutorial first to fund your wallet.");
+            process.exit(1);
+        }
+    } else {
+        console.log("✓ Payment account is funded and ready\n");
+    }
 
     // Step 3: Upload to Filecoin
     console.log("=== Step 3: Upload to Filecoin Network ===");
@@ -80,17 +79,13 @@ async function main() {
     console.log(`  → Use this to retrieve your data from any provider`);
     console.log();
 
-    console.log(`Size: ${uploadResult.size} bytes`);
-    console.log(`  → Verified size of your uploaded data`);
-    console.log(`  → Matches original file: ${uploadResult.size === fileSize ? '✓' : '✗'}`);
+    console.log(`Copies stored: ${uploadResult.copies.length}`);
+    console.log(`Upload Complete: ${uploadResult.complete ? '✓' : '✗'}`);
     console.log();
 
-    if (uploadResult.provider) {
-        console.log(`Provider: ${uploadResult.provider}`);
-        console.log(`  → Storage provider address storing your data`);
-        console.log(`  → SDK automatically selected this provider for you`);
+    if (uploadResult.failedAttempts.length > 0) {
+        console.log(`Note: There were ${uploadResult.failedAttempts.length} failed attempts during upload.`);
     }
-    console.log();
 
     // Step 5: Verify data on-chain
     console.log("=== Step 5: On-Chain Verification ===");

@@ -127,9 +127,9 @@ This generates a default `package.json`. Open it in your text editor and modify 
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@filoz/synapse-sdk": "^0.36.1",
+    "@filoz/synapse-sdk": "^0.39.0",
     "dotenv": "^16.0.3",
-    "ethers": "^6.14.3"
+    "viem": "^2.0.0"
   }
 }
 ```
@@ -143,8 +143,8 @@ npm install
 ```
 
 This installs:
-- **@filoz/synapse-sdk**: For interacting with Filecoin
-- **ethers**: For token math and utility functions
+- **@filoz/synapse-sdk**: For interacting with Filecoin (includes `formatUnits`/`parseUnits` utilities)
+- **viem**: Ethereum/Filecoin client library for wallet signing and transaction handling
 - **dotenv**: For loading environment variables securely
 
 ## Step 2: Security and Funding
@@ -189,8 +189,9 @@ Filecoin separates wallet balances (gas) from payment accounts (storage). We nee
 Create `fund-account.js`:
 
 ```javascript
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration, formatUnits, parseUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -199,45 +200,48 @@ async function fundPaymentAccount() {
     console.log('  Funding Payment Account');
     console.log('======================================================================\n');
 
-    // Initialize SDK
-    const synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    // Initialize SDK (synchronous in v0.39+)
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
-    console.log('Wallet address:', synapse.address);
-    
+    console.log('Wallet address:', synapse.client.account.address);
+
     // Check current balances
-    const walletBalance = await synapse.wallet.balance(TOKENS.USDFC);
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    
-    console.log(`\nCurrent wallet balance: ${ethers.formatUnits(walletBalance, 18)} USDFC`);
-    console.log(`Current payment account balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC\n`);
-    
+    const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
+
+    console.log(`\nCurrent wallet balance: ${formatUnits(walletBalance, 18)} USDFC`);
+    console.log(`Current payment account balance: ${formatUnits(paymentBalance, 18)} USDFC\n`);
+
     if (walletBalance === 0n) {
         console.log('⚠️  Your wallet has no USDFC. Please visit the faucet first:');
         console.log('   https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc\n');
         process.exit(1);
     }
-    
+
     // Deposit and approve operator
     console.log('Depositing 2.5 USDFC to payment account and approving operator...');
-    
-    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-        ethers.parseUnits("2.5", 18),           // Deposit 2.5 USDFC
-        synapse.getWarmStorageAddress(),         // Storage operator address
-        ethers.MaxUint256,                       // Unlimited rate allowance
-        ethers.MaxUint256,                       // Unlimited lockup allowance
-        TIME_CONSTANTS.EPOCHS_PER_MONTH          // 30-day lockup period
-    );
+
+    const hash = await synapse.payments.depositWithPermitAndApproveOperator({
+        amount: parseUnits("2.5"),                                                               // Deposit 2.5 USDFC
+        operator: synapse.chain.contracts.fwss.address,                                         // Storage operator address
+        rateAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),  // Unlimited rate allowance
+        lockupAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), // Unlimited lockup allowance
+        maxLockupPeriod: TIME_CONSTANTS.EPOCHS_PER_MONTH                                        // 30-day lockup period
+    });
 
     console.log('Transaction submitted. Waiting for confirmation...');
-    await tx.wait();
-    
+    await synapse.client.waitForTransactionReceipt({ hash });
+
     // Verify new balance
-    const newPaymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const newPaymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     console.log(`\n✅ Payment account funded successfully!`);
-    console.log(`New payment account balance: ${ethers.formatUnits(newPaymentBalance, 18)} USDFC\n`);
+    console.log(`New payment account balance: ${formatUnits(newPaymentBalance, 18)} USDFC\n`);
 }
 
 fundPaymentAccount().catch(console.error);
@@ -407,8 +411,9 @@ Create `index.js`:
 
 ```javascript
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, calibration, formatUnits } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -429,13 +434,16 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(privateKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     // Verify payment account
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     if (paymentBalance === 0n) {
         console.log("⚠️  Please fund your payment account first");
         process.exit(1);
@@ -498,15 +506,20 @@ Let's break down the key concepts in our comparison script.
 ### SDK Initialization
 
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: privateKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+const account = privateKeyToAccount(privateKey);
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+    account,
+    source: null
 });
 ```
 
 **What this does**:
-- Creates a connection to the Filecoin Calibration testnet
-- Uses your private key to sign transactions
+- Creates a viem `account` from your private key for signing
+- Initializes the SDK synchronously (no `await` needed in v0.39+)
+- `calibration` sets the target network to Filecoin Calibration testnet
+- `source: null` is required — use a string identifier like `"my-app"` in production
 - Returns a `synapse` object for all subsequent operations
 
 **The RPC URL** is the gateway to the Filecoin network. For production, you'd use the mainnet RPC.
@@ -620,7 +633,7 @@ if (paymentBalance === 0n) {
     process.exit(1);
 }
 
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
 if (!approval.isApproved) {
     console.log("⚠️  Operator allowances not set!");
     process.exit(1);
@@ -1257,14 +1270,14 @@ cat .env  # Should show PRIVATE_KEY=...
 1. Get USDFC from faucet: [Calibration USDFC Faucet](https://forest-explorer.chainsafe.dev/faucet/calibnet_usdfc)
 2. Run deposit script:
    ```javascript
-   const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-       ethers.parseUnits("2.5", 18),
-       synapse.getWarmStorageAddress(),
-       ethers.MaxUint256,
-       ethers.MaxUint256,
-       TIME_CONSTANTS.EPOCHS_PER_MONTH
-   );
-   await tx.wait();
+   const hash = await synapse.payments.depositWithPermitAndApproveOperator({
+       amount: parseUnits("2.5"),
+       operator: synapse.chain.contracts.fwss.address,
+       rateAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+       lockupAllowance: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+       maxLockupPeriod: TIME_CONSTANTS.EPOCHS_PER_MONTH
+   });
+   await synapse.client.waitForTransactionReceipt({ hash });
    ```
 
 ### "Operator allowances not set"
@@ -1276,10 +1289,9 @@ Use `depositWithPermitAndApproveOperator` (shown above) which handles both depos
 
 **Verify**:
 ```javascript
-const approval = await synapse.payments.serviceApproval(
-    synapse.getWarmStorageAddress(),
-    TOKENS.USDFC
-);
+const approval = await synapse.payments.serviceApproval({
+    service: synapse.chain.contracts.fwss.address
+});
 console.log('Approved:', approval.isApproved);
 ```
 

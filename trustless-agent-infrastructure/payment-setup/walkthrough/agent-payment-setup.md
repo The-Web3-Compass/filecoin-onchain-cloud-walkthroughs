@@ -55,8 +55,9 @@ Create a file named `index.js` in the `code/` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS, TIME_CONSTANTS, calibration } from '@filoz/synapse-sdk';
+import { createPublicClient, http, formatEther, formatUnits, parseUnits } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // Load environment
 dotenv.config({ path: '.env.local' });
@@ -92,26 +93,31 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env.local");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
+    const rpcUrl = process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1";
+    const account = privateKeyToAccount(privateKey);
+
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http(rpcUrl),
+        account,
+        source: 'payment-setup-walkthrough'
     });
 
-    const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || "https://api.calibration.node.glif.io/rpc/v1"
-    );
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const publicClient = createPublicClient({
+        chain: calibration,
+        transport: http(rpcUrl)
+    });
 
     console.log("SDK initialized successfully.");
-    console.log(`Agent Wallet: ${wallet.address}\n`);
+    console.log(`Agent Wallet: ${account.address}\n`);
 
     // ========================================================================
     // Step 2: Check Gas Balance (FIL)
     // ========================================================================
     console.log("=== Step 2: Check Gas Balance (FIL) ===\n");
 
-    const gasBalance = await provider.getBalance(wallet.address);
-    const gasFormatted = Number(ethers.formatEther(gasBalance));
+    const gasBalance = await publicClient.getBalance({ address: account.address });
+    const gasFormatted = Number(formatEther(gasBalance));
 
     console.log(`Wallet FIL Balance: ${gasBalance.toString()} (raw units)`);
     console.log(`Formatted: ${gasFormatted.toFixed(4)} FIL`);
@@ -130,10 +136,10 @@ async function main() {
     // ========================================================================
     console.log("=== Step 3: Check USDFC Balances ===\n");
 
-    const walletUSDFC = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletUSDFC = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
     const walletUSDFCFormatted = Number(walletUSDFC) / 1e18;
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const paymentFormatted = Number(paymentBalance) / 1e18;
 
     console.log("USDFC Distribution:");
@@ -150,13 +156,13 @@ async function main() {
     // ========================================================================
     console.log("=== Step 4: Payment Account Details ===\n");
 
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
     console.log("Payment Account Breakdown:");
-    console.log(`  Total Funds:     ${ethers.formatUnits(accountInfo.funds, 18)} USDFC`);
-    console.log(`  Current Lockup:  ${ethers.formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
-    console.log(`  Lockup Rate:     ${ethers.formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
-    console.log(`  Available Funds: ${ethers.formatUnits(accountInfo.availableFunds, 18)} USDFC`);
+    console.log(`  Total Funds:     ${formatUnits(accountInfo.funds, 18)} USDFC`);
+    console.log(`  Current Lockup:  ${formatUnits(accountInfo.lockupCurrent, 18)} USDFC`);
+    console.log(`  Lockup Rate:     ${formatUnits(accountInfo.lockupRate, 18)} USDFC/epoch`);
+    console.log(`  Available Funds: ${formatUnits(accountInfo.availableFunds, 18)} USDFC`);
     console.log(`  Last Settled:    Epoch ${accountInfo.lockupLastSettledAt}`);
     console.log();
 
@@ -196,17 +202,17 @@ async function main() {
             console.log(`Depositing ${TOP_UP_AMOUNT} USDFC into payment account...\n`);
 
             try {
-                const depositAmount = ethers.parseUnits(String(TOP_UP_AMOUNT), 18);
-                const receipt = await synapse.payments.depositWithPermit({ amount: depositAmount });
+                const depositAmount = parseUnits(String(TOP_UP_AMOUNT), 18);
+                const txHash = await synapse.payments.depositWithPermit({ amount: depositAmount, token: TOKENS.USDFC });
 
                 console.log("Deposit successful.");
                 console.log(`  Amount: ${TOP_UP_AMOUNT} USDFC`);
-                if (receipt && receipt.transactionHash) {
-                    console.log(`  Transaction: ${receipt.transactionHash}`);
+                if (txHash) {
+                    console.log(`  Transaction: ${txHash}`);
                 }
 
                 // Verify new balance
-                const newBalance = await synapse.payments.balance(TOKENS.USDFC);
+                const newBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
                 const newFormatted = Number(newBalance) / 1e18;
                 console.log(`  New payment balance: ${newFormatted.toFixed(4)} USDFC`);
             } catch (error) {
@@ -229,30 +235,30 @@ async function main() {
     // ========================================================================
     console.log("=== Step 6: Operator Approval Verification ===\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
+    const operatorAddress = synapse.chain.contracts.fwss.address;
 
     console.log(`Storage Operator: ${operatorAddress}`);
 
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
     console.log(`Approved: ${approval.isApproved}`);
-    console.log(`Rate Allowance: ${ethers.formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
-    console.log(`Lockup Allowance: ${ethers.formatUnits(approval.lockupAllowance, 18)} USDFC`);
+    console.log(`Rate Allowance: ${formatUnits(approval.rateAllowance, 18)} USDFC/epoch`);
+    console.log(`Lockup Allowance: ${formatUnits(approval.lockupAllowance, 18)} USDFC`);
     console.log();
 
     if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
         console.log("Operator is not fully approved. Attempting to fix...\n");
 
         try {
-            const receipt = await synapse.payments.approveService(operatorAddress, TOKENS.USDFC);
+            const txHash = await synapse.payments.approveService({ service: operatorAddress, token: TOKENS.USDFC });
 
             console.log("Approval granted successfully.");
-            if (receipt && receipt.transactionHash) {
-                console.log(`  Transaction: ${receipt.transactionHash}`);
+            if (txHash) {
+                console.log(`  Transaction: ${txHash}`);
             }
 
             // Verify new approval
-            const newApproval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+            const newApproval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
             console.log(`  New approval status: ${newApproval.isApproved}`);
         } catch (error) {
             console.log("Approval failed:", error.message);
@@ -268,7 +274,7 @@ async function main() {
     // ========================================================================
     console.log("=== Step 7: Payment Rail Monitoring ===\n");
 
-    const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+    const rails = await synapse.payments.getRailsAsPayer({ token: TOKENS.USDFC });
     const activeRails = rails.filter(r => !r.isTerminated);
 
     console.log(`Total payment rails: ${rails.length}`);
@@ -317,7 +323,7 @@ async function main() {
 
     const healthDashboard = {
         timestamp: new Date().toISOString(),
-        agent: wallet.address,
+        agent: account.address,
         network: "Filecoin Calibration Testnet",
         gas: {
             balance: gasFormatted.toFixed(4) + " FIL",
@@ -394,23 +400,23 @@ This script demonstrates the complete autonomous payment management workflow wit
 ### Gas Balance Check
 
 ```javascript
-const gasBalance = await provider.getBalance(wallet.address);
-const gasFormatted = Number(ethers.formatEther(gasBalance));
+const gasBalance = await publicClient.getBalance({ address: account.address });
+const gasFormatted = Number(formatEther(gasBalance));
 
 if (gasFormatted < MIN_GAS_BALANCE) {
     console.log("WARNING: Gas balance is below threshold.");
 }
 ```
 
-We use ethers.js directly to check the wallet's FIL balance. The Synapse SDK handles USDFC operations, but native FIL balance requires a direct provider call. The `getBalance()` method returns a BigInt in attoFIL (10^18 units per FIL), and `formatEther()` converts it to a human-readable number.
+We use viem's `publicClient` to check the wallet's FIL balance. The Synapse SDK handles USDFC operations, but native FIL balance requires a direct chain read. The `getBalance()` method returns a BigInt in attoFIL (10^18 units per FIL), and `formatEther()` from viem converts it to a human-readable number.
 
 Gas is the most critical resource because without it, the agent cannot execute any corrective action. If USDFC runs low, the agent can deposit more — but only if it has gas. If the operator approval lapses, the agent can re-approve — but only if it has gas. Gas depletion is the one problem the agent cannot fix on its own.
 
 ### Dual USDFC Balance Check
 
 ```javascript
-const walletUSDFC = await synapse.payments.walletBalance(TOKENS.USDFC);
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const walletUSDFC = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
+const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
 ```
 
 Two separate methods check USDFC in two different locations. `walletBalance()` returns USDFC held in the wallet (available for deposit). `balance()` returns USDFC in the payment account (available for storage operations).
@@ -420,7 +426,7 @@ The distinction matters because having USDFC in your wallet does not mean you ca
 ### Payment Account Details
 
 ```javascript
-const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
 if (accountInfo.lockupRate > 0n) {
     const epochsRemaining = accountInfo.availableFunds / accountInfo.lockupRate;
@@ -443,8 +449,8 @@ From `availableFunds` and `lockupRate`, we calculate how many epochs (and theref
 ```javascript
 if (paymentFormatted < MIN_PAYMENT_BALANCE) {
     if (walletUSDFCFormatted >= TOP_UP_AMOUNT) {
-        const depositAmount = ethers.parseUnits(String(TOP_UP_AMOUNT), 18);
-        const receipt = await synapse.payments.depositWithPermit({ amount: depositAmount });
+        const depositAmount = parseUnits(String(TOP_UP_AMOUNT), 18);
+        const txHash = await synapse.payments.depositWithPermit({ amount: depositAmount, token: TOKENS.USDFC });
     }
 }
 ```
@@ -454,17 +460,18 @@ The top-up logic follows a two-gate pattern:
 1. **Is the payment balance below threshold?** If yes, proceed. If no, do nothing.
 2. **Does the wallet have enough USDFC for the deposit?** If yes, deposit. If no, alert.
 
-The deposit amount is converted from a human-readable number (5.0) to a BigInt using `ethers.parseUnits()`, which handles the 18-decimal conversion precisely. We use `depositWithPermit()` rather than the two-step `approve()` + `deposit()` pattern — this executes the deposit in a single transaction using EIP-2612 permit signatures, saving gas.
+The deposit amount is converted from a human-readable number (5.0) to a BigInt using `parseUnits()` from viem, which handles the 18-decimal conversion precisely. We use `depositWithPermit()` rather than the two-step `approve()` + `deposit()` pattern — this executes the deposit in a single transaction using EIP-2612 permit signatures, saving gas. The method returns a transaction hash directly.
 
 After depositing, we verify the new balance to confirm the transaction succeeded. This verification step catches edge cases where the transaction was submitted but failed silently.
 
 ### Operator Approval Auto-Fix
 
 ```javascript
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const operatorAddress = synapse.chain.contracts.fwss.address;
+const approval = await synapse.payments.serviceApproval({ service: operatorAddress, token: TOKENS.USDFC });
 
 if (!approval.isApproved || approval.rateAllowance === 0n || approval.lockupAllowance === 0n) {
-    const receipt = await synapse.payments.approveService(operatorAddress, TOKENS.USDFC);
+    const txHash = await synapse.payments.approveService({ service: operatorAddress, token: TOKENS.USDFC });
 }
 ```
 
@@ -475,7 +482,7 @@ If any condition fails, we call `approveService()` to re-establish the approval.
 ### Payment Rail Monitoring
 
 ```javascript
-const rails = await synapse.payments.getRailsAsPayer(TOKENS.USDFC);
+const rails = await synapse.payments.getRailsAsPayer({ token: TOKENS.USDFC });
 const activeRails = rails.filter(r => !r.isTerminated);
 ```
 
@@ -728,7 +735,7 @@ Rails are created asynchronously. There may be a delay between initiating a stor
 
 **"Cannot read properties of undefined" on accountInfo fields**
 
-The `accountInfo()` method may return different field names depending on the SDK version. Verify you are using `@filoz/synapse-sdk` version 0.36.1 or later. Check the [SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) for the current field names.
+The `accountInfo()` method may return different field names depending on the SDK version. Verify you are using `@filoz/synapse-sdk` version 0.39.0 or later. Check the [SDK documentation](https://docs.filecoin.cloud/developer-guides/synapse/) for the current field names.
 
 **Health dashboard shows CRITICAL but everything seems fine**
 

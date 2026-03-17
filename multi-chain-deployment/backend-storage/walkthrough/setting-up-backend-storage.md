@@ -77,7 +77,9 @@ Create a file named `index.js` in your `code` directory:
 
 ```javascript
 import dotenv from 'dotenv';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 
 // Load .env.local first (if it exists), then .env
 dotenv.config({ path: '.env.local' });
@@ -96,9 +98,12 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in environment");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: backendKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const account = privateKeyToAccount(backendKey);
+    const synapse = Synapse.create({
+        chain: calibration,
+        transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+        account,
+        source: null
     });
 
     console.log("Backend SDK initialized successfully.");
@@ -107,7 +112,7 @@ async function main() {
     // Step 2: Check Wallet Balance (Gas)
     console.log("=== Step 2: Wallet Balance Check ===\n");
 
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
     const walletBalanceFormatted = Number(walletBalance) / 1e18;
 
     console.log(`Wallet USDFC Balance: ${walletBalanceFormatted.toFixed(4)} USDFC`);
@@ -121,7 +126,7 @@ async function main() {
     // Step 3: Check Payment Account Balance
     console.log("\n=== Step 3: Payment Account Balance ===\n");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+    const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
     const paymentBalanceFormatted = Number(paymentBalance) / 1e18;
 
     console.log(`Payment Account Balance: ${paymentBalanceFormatted.toFixed(4)} USDFC`);
@@ -138,8 +143,8 @@ async function main() {
     // Step 4: Verify Operator Approval
     console.log("\n=== Step 4: Operator Approval ===\n");
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+    const operatorAddress = synapse.chain.contracts.fwss.address;
+    const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
 
     console.log(`Storage Operator: ${operatorAddress}`);
     console.log(`Approved: ${approval.isApproved}`);
@@ -176,9 +181,6 @@ async function main() {
         console.log("Upload successful.");
         console.log(`PieceCID: ${uploadResult.pieceCid}`);
         console.log(`Size: ${uploadResult.size} bytes`);
-        if (uploadResult.provider) {
-            console.log(`Provider: ${uploadResult.provider}`);
-        }
     } catch (error) {
         console.error("Upload failed:", error.message);
         process.exit(1);
@@ -190,7 +192,7 @@ async function main() {
     console.log(`Downloading data for PieceCID: ${uploadResult.pieceCid}...`);
 
     try {
-        const downloadedData = await synapse.storage.download(uploadResult.pieceCid);
+        const downloadedData = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 
         console.log("Download successful.");
         console.log(`Retrieved ${downloadedData.length} bytes`);
@@ -216,7 +218,7 @@ async function main() {
     // Step 7: Account Health
     console.log("\n=== Step 7: Account Health ===\n");
 
-    const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+    const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 
     console.log("Current Account Status:");
     console.log(`  Available: ${(Number(accountInfo.availableFunds) / 1e18).toFixed(4)} USDFC`);
@@ -258,13 +260,16 @@ This script establishes your complete backend storage infrastructure.
 ### SDK Initialization
 
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: backendKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+const account = privateKeyToAccount(backendKey);
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+    account,
+    source: null
 });
 ```
 
-The SDK initializes with your backend wallet's private key. This differs from user-facing wallets in several ways:
+The SDK initializes using viem's `privateKeyToAccount` to create the account, then passes it to `Synapse.create()`. Note that `Synapse.create()` is synchronous — no `await` required. This differs from user-facing wallets in several ways:
 
 - **Server-side execution**: This runs on your servers, not in browsers
 - **Persistent connection**: The SDK instance can live for the lifetime of your server
@@ -275,8 +280,8 @@ In production, you might initialize the SDK once at server startup and reuse it 
 ### Dual Balance Checking
 
 ```javascript
-const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
+const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
+const paymentBalance = await synapse.payments.balance({ token: TOKENS.USDFC });
 ```
 
 Two distinct balances matter:
@@ -290,8 +295,8 @@ Your backend needs payment account funds to perform uploads. Wallet funds must b
 ### Operator Verification
 
 ```javascript
-const operatorAddress = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operatorAddress, TOKENS.USDFC);
+const operatorAddress = synapse.chain.contracts.fwss.address;
+const approval = await synapse.payments.serviceApproval({ service: operatorAddress });
 ```
 
 Storage operators must be explicitly approved to charge your payment account. This approval includes:
@@ -305,7 +310,7 @@ Without approval, uploads fail because providers cannot collect payment.
 
 ```javascript
 const uploadResult = await synapse.storage.upload(demoData);
-const downloadedData = await synapse.storage.download(uploadResult.pieceCid);
+const downloadedData = await synapse.storage.download({ pieceCid: uploadResult.pieceCid });
 ```
 
 The upload returns a PieceCID - a content-addressed identifier derived from your data. This identifier:
@@ -317,7 +322,7 @@ The upload returns a PieceCID - a content-addressed identifier derived from your
 ### Account Health
 
 ```javascript
-const accountInfo = await synapse.payments.accountInfo(TOKENS.USDFC);
+const accountInfo = await synapse.payments.accountInfo({ token: TOKENS.USDFC });
 ```
 
 Monitor your account health to ensure continuous operation:
@@ -397,19 +402,21 @@ In production, you would wrap this functionality in an API server. Here is a min
 
 ```javascript
 import express from 'express';
-import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { Synapse, TOKENS, calibration } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { http } from 'viem';
 
 const app = express();
 app.use(express.json());
 
-// Initialize SDK once at startup
-let synapse;
-async function initSDK() {
-    synapse = await Synapse.create({
-        privateKey: process.env.PRIVATE_KEY,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
-    });
-}
+// Initialize SDK once at startup (synchronous)
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+const synapse = Synapse.create({
+    chain: calibration,
+    transport: http("https://api.calibration.node.glif.io/rpc/v1"),
+    account,
+    source: null
+});
 
 app.post('/api/upload', async (req, res) => {
     try {
@@ -423,16 +430,14 @@ app.post('/api/upload', async (req, res) => {
 
 app.get('/api/download/:pieceCid', async (req, res) => {
     try {
-        const data = await synapse.storage.download(req.params.pieceCid);
+        const data = await synapse.storage.download({ pieceCid: req.params.pieceCid });
         res.json({ data: Buffer.from(data).toString('base64') });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-initSDK().then(() => {
-    app.listen(3000, () => console.log('Backend storage API running'));
-});
+app.listen(3000, () => console.log('Backend storage API running'));
 ```
 
 This pattern separates storage operations from payment verification, which happens in a different layer.

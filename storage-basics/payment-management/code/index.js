@@ -1,10 +1,6 @@
-import dotenv from 'dotenv';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
-
-// Load .env.local first (if it exists), then .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import 'dotenv/config';
+import { Synapse } from '@filoz/synapse-sdk';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
     console.log("Managing Filecoin Payment Accounts...\n");
@@ -15,105 +11,69 @@ async function main() {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'payment-management'
     });
 
     console.log("✓ SDK initialized\n");
 
     // Check wallet balance
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
+    const walletBalance = await synapse.payments.walletBalance();
 
-    // Step 1: Define deposit parameters
+    // Step 1: Define storage size requirements
     console.log("=== Step 1: Configure Deposit Parameters ===");
 
-    const depositAmount = ethers.parseUnits("5.0", 18);
-    console.log(`Deposit Amount: ${ethers.formatUnits(depositAmount, 18)} USDFC`);
+    // Let's pretend we want to store 5 TiB of data
+    // 5 TiB = 5 * 1024 * 1024 * 1024 * 1024 bytes
+    const targetDataSize = BigInt(5 * 1024 * 1024 * 1024 * 1024);
+    console.log(`Target Data Size: 5 TiB`);
 
-    const operatorAddress = synapse.getWarmStorageAddress();
-    console.log(`Operator Address: ${operatorAddress}`);
+    // The SDK automatically calculates the exact deposit needed
+    // based on the size of the data you intend to upload
+    const prep = await synapse.storage.prepare({
+        dataSize: targetDataSize,
+    });
 
-    const rateAllowance = ethers.MaxUint256;
-    console.log(`Rate Allowance: Unlimited (${rateAllowance})`);
-
-    const lockupAllowance = ethers.MaxUint256;
-    console.log(`Lockup Allowance: Unlimited (${lockupAllowance})`);
-
-    const lockupPeriod = TIME_CONSTANTS.EPOCHS_PER_MONTH;
-    const lockupDays = Number(lockupPeriod / TIME_CONSTANTS.EPOCHS_PER_DAY);
-    console.log(`Lockup Period: ${lockupPeriod} epochs (~${lockupDays} days)\n`);
+    console.log(`Total Value Required: ${prep.costs.depositNeeded} raw units of USDFC (wei)`);
+    console.log(`Payment Status: ${prep.costs.ready ? 'Ready to upload' : 'Deposit required'}\n`);
 
     // Step 2: Validate sufficient balance
     console.log("=== Step 2: Validate Balance ===");
-    if (walletBalance < depositAmount) {
+    if (walletBalance < prep.costs.depositNeeded) {
         throw new Error(
-            `Insufficient balance. Required: ${ethers.formatUnits(depositAmount, 18)} USDFC, ` +
-            `Available: ${ethers.formatUnits(walletBalance, 18)} USDFC`
+            `Insufficient balance. Required: ${prep.costs.depositNeeded} USDFC (wei), ` +
+            `Available: ${walletBalance} USDFC (wei)`
         );
     }
     console.log("✓ Sufficient USDFC balance confirmed\n");
 
     // Step 3: Execute deposit and approval
     console.log("=== Step 3: Deposit and Approve Operator ===");
-    console.log("Submitting transaction...");
 
-    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-        depositAmount,
-        operatorAddress,
-        rateAllowance,
-        lockupAllowance,
-        lockupPeriod
-    );
-
-    console.log(`Transaction Hash: ${tx.hash}`);
-    console.log("Waiting for confirmation...");
-
-    const receipt = await tx.wait();
-    console.log(`✓ Transaction confirmed in block ${receipt.blockNumber}\n`);
+    // `prepare` returns a single transaction that handles deposit + approval.
+    // If your account is already funded, `transaction` will be null.
+    if (prep.transaction) {
+        console.log("Submitting payment and approval transaction...");
+        const { hash } = await prep.transaction.execute();
+        console.log(`Transaction Hash: ${hash}`);
+        console.log("Waiting for confirmation...");
+        await synapse.client.waitForTransactionReceipt({ hash });
+        console.log(`✓ Payment transaction confirmed\n`);
+    } else {
+        console.log(`✓ Payment already setup! No transactions required.\n`);
+    }
 
     // Step 4: Verify payment account balance
     console.log("=== Step 4: Verify Payment Account Balance ===");
 
-    const paymentBalance = await synapse.payments.balance(TOKENS.USDFC);
-    console.log(`Payment Account Balance: ${ethers.formatUnits(paymentBalance, 18)} USDFC`);
+    const paymentBalance = await synapse.payments.balance();
+    console.log(`Payment Account Balance: ${paymentBalance.toString()} USDFC (wei)`);
 
-    const updatedWalletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-    console.log(`Wallet Balance: ${ethers.formatUnits(updatedWalletBalance, 18)} USDFC\n`);
-
-    // Step 5: Check operator allowances
-    console.log("=== Step 5: Check Operator Allowances ===");
-
-    console.log("Waiting 5 seconds for network consistency...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    const allowance = await synapse.payments.allowance(
-        operatorAddress,
-        TOKENS.USDFC
-    );
-
-    // Format rate allowance with null check
-    let rateAllowanceDisplay;
-    if (allowance.rateAllowance === null || allowance.rateAllowance === undefined) {
-        rateAllowanceDisplay = 'Not set';
-    } else if (allowance.rateAllowance === ethers.MaxUint256) {
-        rateAllowanceDisplay = 'Unlimited';
-    } else {
-        rateAllowanceDisplay = `${ethers.formatUnits(allowance.rateAllowance, 18)} USDFC`;
-    }
-
-    // Format lockup allowance with null check
-    let lockupAllowanceDisplay;
-    if (allowance.lockupAllowance === null || allowance.lockupAllowance === undefined) {
-        lockupAllowanceDisplay = 'Not set';
-    } else if (allowance.lockupAllowance === ethers.MaxUint256) {
-        lockupAllowanceDisplay = 'Unlimited';
-    } else {
-        lockupAllowanceDisplay = `${ethers.formatUnits(allowance.lockupAllowance, 18)} USDFC`;
-    }
-
-    console.log(`Rate Allowance: ${rateAllowanceDisplay}`);
-    console.log(`Lockup Allowance: ${lockupAllowanceDisplay}`);
+    const updatedWalletBalance = await synapse.payments.walletBalance();
+    console.log(`Wallet Balance: ${updatedWalletBalance.toString()} USDFC (wei)\n`);
 
     console.log("\n✅ Payment setup complete! Your account is ready for storage operations.");
 }

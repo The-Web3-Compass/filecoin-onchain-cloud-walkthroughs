@@ -101,14 +101,14 @@ Create a new project directory and install the required packages:
 mkdir my-foc-app
 cd my-foc-app
 npm init -y
-npm install @filoz/synapse-sdk ethers dotenv
+npm install @filoz/synapse-sdk viem dotenv
 ```
 
 These three packages serve distinct purposes:
 
 **@filoz/synapse-sdk** provides your interface to Filecoin. It manages wallet operations, transaction signing, storage interactions, and payment accounts. The blockchain complexity is abstracted into straightforward method calls. Documentation is available at [docs.filecoin.cloud/developer-guides/synapse](https://docs.filecoin.cloud/developer-guides/synapse/).
 
-**ethers** is the standard Ethereum library. Since Filecoin is EVM compatible, ethers works seamlessly for utilities like parsing token amounts and formatting data. We specify version 6.14.3 explicitly for compatibility. Documentation is available at [docs.ethers.org](https://docs.ethers.org/).
+**viem** is the modern Ethereum library. Since Filecoin is EVM compatible, viem works seamlessly for utilities like parsing token amounts, managing accounts, and formatting data. We use it for key management and basic wallet operations. Documentation is available at [viem.sh](https://viem.sh/).
 
 **dotenv** loads environment variables from .env files. This is essential for keeping your private key out of source code.
 
@@ -121,9 +121,9 @@ After installation, update your package.json to enable ES modules, which the Syn
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "@filoz/synapse-sdk": "^0.36.1",
+    "@filoz/synapse-sdk": "^0.39.0",
     "dotenv": "^17.2.3",
-    "ethers": "^6.14.3"
+    "viem": "^2.0.0"
   }
 }
 ```
@@ -165,59 +165,53 @@ Create index.js in your project root:
 
 ```javascript
 import 'dotenv/config';
-import { Synapse, TOKENS, TIME_CONSTANTS } from '@filoz/synapse-sdk';
-import { ethers } from 'ethers';
+import { Synapse, TOKENS } from '@filoz/synapse-sdk';
+import { mainnet } from '@filoz/synapse-core/chains';
+import { privateKeyToAccount } from 'viem/accounts';
 
 async function main() {
-    console.log("Initializing Filecoin Onchain Cloud SDK...");
+    console.log("Initializing Filecoin Onchain Cloud SDK...\n");
 
-    // Load private key from environment variables
+    // 1. Initialize the SDK
     const privateKey = process.env.PRIVATE_KEY;
     if (!privateKey) {
         throw new Error("Missing PRIVATE_KEY in .env file");
     }
 
-    // Initialize the SDK with Calibration network configuration
-    const synapse = await Synapse.create({
-        privateKey: privateKey,
-        rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
+    // Ensure privateKey starts with 0x for viem
+    const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'get-token-tutorial',
+        // Optional: specify chain, defaults to calibration testnet
+        // chain: mainnet 
     });
 
-    console.log("SDK initialized successfully");
+    console.log("✓ SDK initialized successfully\n");
 
-    // Verify USDFC balance before attempting deposit
-    console.log("Checking USDFC balance...");
+    // 2. Check Balances
+    console.log("=== Checking Balances ===");
+
+    // Check balance in your wallet
+    const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
     
-    const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-    console.log(`Wallet Balance: ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+    // USDFC has 18 decimals, this shows the raw "wei" amount
+    console.log(`Wallet Balance: ${walletBalance.toString()} USDFC (raw wei)`);
 
-    // Define deposit amount (2.5 USDFC covers approximately 1TiB for 30 days)
-    const depositAmount = ethers.parseUnits("2.5", 18);
-
-    if (walletBalance < depositAmount) {
-        throw new Error("Insufficient USDFC balance. Request more tokens from the faucet.");
-    }
-
-    console.log("Depositing 2.5 USDFC to payment account...");
-
-    // Execute deposit and operator approval in a single transaction
-    const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-        depositAmount,
-        synapse.getWarmStorageAddress(),
-        ethers.MaxUint256,
-        ethers.MaxUint256,
-        TIME_CONSTANTS.EPOCHS_PER_MONTH
-    );
-
-    console.log("Waiting for transaction confirmation...");
-    await tx.wait();
-
-    console.log("Success! Your account is now funded and ready to store data.");
+    // In the new API, we don't need to manually deposit and approve the operator
+    // with complex lockup periods. The `synapse.storage.prepare()` method calculates
+    // the exact deposit needed for your data size and returns a single transaction
+    // that handles both funding and approval.
+    
+    console.log("\nSuccess! Your account is configured and your wallet is funded.");
+    console.log("You're ready to proceed to the next tutorial to learn about storage payments.");
 }
 
 main().catch((err) => {
     console.error("Error during initialization:");
     console.error(err);
+    process.exit(1);
 });
 ```
 
@@ -229,60 +223,28 @@ main().catch((err) => {
 **SDK Initialization**
 
 ```javascript
-const synapse = await Synapse.create({
-    privateKey: privateKey,
-    rpcURL: "https://api.calibration.node.glif.io/rpc/v1"
-});
+    const synapse = Synapse.create({
+        account: privateKeyToAccount(formattedPrivateKey),
+        source: 'get-token-tutorial'
+    });
 ```
 
-The Synapse.create() method establishes your connection to Filecoin. It creates a wallet from your private key, connects to Calibration through the RPC endpoint, and returns a fully configured instance. The RPC URL points to Glif's maintained Calibration endpoint, which is reliable and saves you from hunting down infrastructure URLs.
+The `Synapse.create()` method establishes your connection to Filecoin. It uses your private key (managed safely via viem's `privateKeyToAccount`) and a source identifier to return a fully configured instance. By default, it connects to the Calibration testnet using reliable public endpoints, which saves you from hunting down infrastructure URLs.
 
 **Balance Verification**
 
 ```javascript
-const walletBalance = await synapse.payments.walletBalance(TOKENS.USDFC);
-console.log(`Wallet Balance: ${ethers.formatUnits(walletBalance, 18)} USDFC`);
+const walletBalance = await synapse.payments.walletBalance({ token: TOKENS.USDFC });
+console.log(`Wallet Balance: ${walletBalance.toString()} USDFC (raw wei)`);
 ```
 
-Checking balance before attempting deposits avoids wasting gas on transactions that would fail anyway.
+Checking your wallet's balance is incredibly straightforward. The `walletBalance` method retrieves the raw amount of USDFC in your connected wallet. Because blockchains store token amounts as integers to prevent floating-point errors (and USDFC uses 18 decimals), the raw value looks much higher than standard decimal inputs.
 
-Blockchains store token amounts as integers to prevent floating point errors. USDFC uses 18 decimal places like most ERC-20 tokens, so 1.0 USDFC is stored internally as 1000000000000000000. The ethers.formatUnits(value, 18) function converts this to human readable form. The ethers.parseUnits("2.5", 18) function performs the reverse conversion.
+**Simplified Payments**
 
-**The Deposit Transaction**
+Historically, developers had to manually handle allowances, calculate epochs, determine lockup parameters, and send complicated atomic `depositWithPermitAndApproveOperator` transactions just to deposit tokens into the payment contract. 
 
-```javascript
-const tx = await synapse.payments.depositWithPermitAndApproveOperator(
-    depositAmount,
-    synapse.getWarmStorageAddress(),
-    ethers.MaxUint256,
-    ethers.MaxUint256,
-    TIME_CONSTANTS.EPOCHS_PER_MONTH
-);
-```
-
-This single transaction performs two operations atomically. It deposits USDFC from your wallet into your payment account, and it approves the Warm Storage operator to charge that account.
-
-The parameters control specific aspects of this operation:
-
-**depositAmount** specifies how much USDFC to deposit. We use 2.5 USDFC here, which covers approximately 1 TiB for 30 days. Production deployments should calculate this based on actual storage requirements.
-
-**synapse.getWarmStorageAddress()** returns the Warm Storage operator's address. Warm Storage is optimized for data that gets accessed frequently. Cold Storage exists for archival data that you rarely need to retrieve.
-
-**The first ethers.MaxUint256** sets the rate allowance, which limits what the operator can charge per epoch. Setting this to unlimited sounds risky but is actually safe. Operators can only charge for storage you actually use. They cannot arbitrarily drain your account. Unlimited simply means you will not inadvertently block legitimate charges.
-
-**The second ethers.MaxUint256** sets the lockup allowance, which limits how much can be locked for storage deals. This is also set to unlimited for flexibility.
-
-**TIME_CONSTANTS.EPOCHS_PER_MONTH** specifies the lockup duration. An epoch on Filecoin lasts 30 seconds. This parameter sets a 30 day lockup period for storage deals.
-
-Combining these operations into one transaction provides multiple benefits. It saves gas by requiring only one transaction instead of two. It improves user experience by prompting for only one wallet confirmation. And it ensures atomic execution where either both operations succeed or both fail, preventing inconsistent states.
-
-**Transaction Confirmation**
-
-```javascript
-await tx.wait();
-```
-
-This call blocks until the transaction is mined. Filecoin produces blocks approximately every 30 seconds, so expect confirmation to take 30 to 60 seconds. Once this completes, your payment account is funded and ready for storage operations.
+With `v0.37.0+` of the Synapse SDK, all of this is abstracted away. In the next tutorial, you'll see how `synapse.storage.prepare()` intelligently calculates exactly what deposit is needed for the requested upload size and returns a single `transaction.execute()` call to seamlessly fund and approve the deal.
 
 ## Step 6: Run the Script
 
@@ -366,9 +328,9 @@ Verify that your .env file exists in the project root directory. Ensure the priv
 
 Request additional tokens from the USDFC faucet. Wait approximately one minute for tokens to arrive before retrying. Verify your actual balance in MetaMask.
 
-**"url.clone is not a function" or similar errors**
+**"Cannot find module" or "ERR_REQUIRE_ESM" errors**
 
-Confirm you are using ethers version 6.14.3 by checking your package.json. Verify that "type": "module" is present in package.json. Delete the node_modules directory and package-lock.json file, then run npm install again.
+Verify that `"type": "module"` is present in your package.json. The Synapse SDK requires ES modules. Delete the `node_modules` directory and `package-lock.json` file, then run `npm install` again. Confirm you have `viem` installed alongside `@filoz/synapse-sdk`.
 
 **Transaction fails or times out**
 

@@ -45,14 +45,14 @@ After running payment-management, verify your setup by checking:
 
 ```javascript
 // Check payment account balance (not wallet balance)
-const balance = await synapse.payments.balance(TOKENS.USDFC);
+const balance = await synapse.payments.balance();
 
-// Check operator approval
-const operator = synapse.getWarmStorageAddress();
-const approval = await synapse.payments.serviceApproval(operator, TOKENS.USDFC);
+// Check payment readiness for a given upload size
+const prep = await synapse.storage.prepare({ dataSize: BigInt(1024) });
+const isReady = prep.costs.ready;
 ```
 
-If `balance > 0` and `approval.isApproved === true`, you're ready.
+If `balance > 0` and `isReady === true`, you're ready.
 
 ## Environment Setup
 
